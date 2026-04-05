@@ -15,7 +15,6 @@
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-/* Morandi Pastel Color Palette */
 :root {
   --bg-page:    #ede9e4;
   --bg-card:    #f5f2ee;
@@ -31,13 +30,8 @@
   --border-strong: rgba(120,110,100,0.30);
 
   --accent-blue:    #8fa8b8;
-  --accent-sage:    #8fa89a;
-  --accent-rose:    #c4a89a;
-  --accent-lavender:#a89ab8;
-  --accent-amber:   #c4b48a;
-
-  --tab-active-bg:   #4a4540;
-  --tab-active-text: #f5f2ee;
+  --tab-active-bg:  #4a4540;
+  --tab-active-text:#f5f2ee;
 
   --r1: 8px;
   --r2: 14px;
@@ -50,11 +44,13 @@ body {
   background: var(--bg-page);
   color: var(--text-primary);
   min-height: 100dvh;
+  font-size: 17px;
+  line-height: 1.7;
   padding-bottom: calc(72px + var(--safe-bottom));
 }
 
 ruby { ruby-align: center; }
-rt { font-size: 0.5em; color: var(--accent-blue); font-weight: 500; }
+rt { font-size: 0.52em; color: var(--accent-blue); font-weight: 500; }
 
 /* ── Topbar ── */
 .topbar {
@@ -68,12 +64,12 @@ rt { font-size: 0.5em; color: var(--accent-blue); font-weight: 500; }
   justify-content: space-between; margin-bottom: 14px;
 }
 .app-title {
-  font-size: 16px; font-weight: 500;
+  font-size: 18px; font-weight: 500;
   color: var(--text-primary); letter-spacing: 0.02em;
 }
 .topbar-actions { display: flex; gap: 8px; }
 .icon-btn {
-  font-size: 12px; padding: 5px 12px; border-radius: 99px;
+  font-size: 13px; padding: 6px 14px; border-radius: 99px;
   border: 1px solid var(--border-medium);
   background: transparent; color: var(--text-secondary);
   cursor: pointer; font-family: inherit; transition: all 0.15s;
@@ -92,9 +88,9 @@ rt { font-size: 0.5em; color: var(--accent-blue); font-weight: 500; }
 .tabs-wrap::-webkit-scrollbar { display: none; }
 .tabs { display: flex; gap: 6px; width: max-content; }
 .tab-btn {
-  padding: 6px 14px; border-radius: 99px;
+  padding: 7px 16px; border-radius: 99px;
   border: 1px solid var(--border-medium);
-  background: transparent; font-size: 12px; font-weight: 500;
+  background: transparent; font-size: 13px; font-weight: 500;
   color: var(--text-secondary); cursor: pointer;
   font-family: inherit; white-space: nowrap; transition: all 0.15s;
 }
@@ -110,23 +106,22 @@ rt { font-size: 0.5em; color: var(--accent-blue); font-weight: 500; }
 
 /* ── Generate button ── */
 .gen-btn {
-  width: 100%; padding: 13px;
+  width: 100%; padding: 15px;
   border-radius: var(--r2);
   border: 1px solid var(--border-medium);
   background: var(--bg-card);
-  font-size: 14px; font-weight: 500;
+  font-size: 16px; font-weight: 500;
   color: var(--text-primary);
   cursor: pointer; font-family: inherit;
   margin-bottom: 12px; transition: all 0.15s;
-  letter-spacing: 0.02em;
 }
 .gen-btn:active { transform: scale(0.99); background: var(--bg-subtle); }
 .gen-btn:disabled { opacity: 0.45; cursor: not-allowed; }
 
 /* ── Status bar ── */
 .status-bar {
-  font-size: 12px; color: var(--text-secondary);
-  text-align: center; padding: 9px 12px;
+  font-size: 14px; color: var(--text-secondary);
+  text-align: center; padding: 10px 12px;
   margin-bottom: 12px; background: var(--bg-surface);
   border-radius: var(--r1); border: 1px solid var(--border-light);
   display: none; line-height: 1.5;
@@ -137,13 +132,13 @@ rt { font-size: 0.5em; color: var(--accent-blue); font-weight: 500; }
 .news-card {
   background: var(--bg-card);
   border: 1px solid var(--border-light);
-  border-radius: var(--r2); margin-bottom: 14px; overflow: hidden;
+  border-radius: var(--r2); margin-bottom: 16px; overflow: hidden;
 }
-.card-header { padding: 14px 16px 12px; border-bottom: 1px solid var(--border-light); }
-.badge-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.card-header { padding: 16px 18px 14px; border-bottom: 1px solid var(--border-light); }
+.badge-row { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
 .badge {
-  font-size: 11px; font-weight: 500;
-  padding: 3px 10px; border-radius: 99px; white-space: nowrap;
+  font-size: 12px; font-weight: 500;
+  padding: 4px 12px; border-radius: 99px; white-space: nowrap;
 }
 .badge-tech       { background: #dde8f0; color: #5a7a90; }
 .badge-urban      { background: #e8ead8; color: #6a7a50; }
@@ -151,60 +146,61 @@ rt { font-size: 0.5em; color: var(--accent-blue); font-weight: 500; }
 .badge-economy    { background: #e8e0f0; color: #706090; }
 .badge-agri       { background: #dceadc; color: #507050; }
 
-.card-title { font-size: 15px; font-weight: 500; line-height: 1.6; color: var(--text-primary); }
-.card-meta { font-size: 12px; color: var(--text-tertiary); margin-top: 5px; }
-.card-body { padding: 14px 16px; }
+.card-title { font-size: 18px; font-weight: 500; line-height: 1.6; color: var(--text-primary); }
+.card-meta { font-size: 13px; color: var(--text-tertiary); margin-top: 6px; }
+.card-body { padding: 16px 18px; }
 
 .section-lbl {
-  font-size: 10px; font-weight: 500; letter-spacing: 0.1em;
+  font-size: 11px; font-weight: 500; letter-spacing: 0.1em;
   text-transform: uppercase; color: var(--text-tertiary);
-  margin-top: 18px; margin-bottom: 9px;
+  margin-top: 20px; margin-bottom: 10px;
 }
 .section-lbl:first-child { margin-top: 0; }
 
-.summary { font-size: 14px; line-height: 1.9; color: var(--text-primary); }
+.summary { font-size: 16px; line-height: 1.9; color: var(--text-primary); }
 .summary-zh {
-  font-size: 13px; line-height: 1.7; color: var(--text-secondary);
-  margin-top: 9px; padding-top: 9px;
+  font-size: 15px; line-height: 1.8; color: var(--text-secondary);
+  margin-top: 10px; padding-top: 10px;
   border-top: 1px solid var(--border-light);
 }
 
 /* ── Vocab grid ── */
-.vocab-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.vocab-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 @media (min-width: 500px) { .vocab-grid { grid-template-columns: repeat(3, 1fr); } }
 
 .vocab-item {
   background: var(--bg-surface); border-radius: var(--r1);
-  padding: 10px 12px; border: 1px solid var(--border-light);
+  padding: 12px 14px; border: 1px solid var(--border-light);
 }
-.vocab-word { font-size: 16px; font-weight: 500; color: var(--text-primary); }
-.vocab-meaning { font-size: 12px; color: var(--text-secondary); margin-top: 4px; }
-.vocab-ex { font-size: 11px; color: var(--text-tertiary); margin-top: 4px; line-height: 1.6; }
+.vocab-word { font-size: 20px; font-weight: 500; color: var(--text-primary); }
+.vocab-meaning { font-size: 14px; color: var(--text-secondary); margin-top: 5px; }
+.vocab-ex { font-size: 13px; color: var(--text-tertiary); margin-top: 5px; line-height: 1.7; }
 
 /* ── Grammar ── */
 .grammar-item {
   border-left: 2px solid var(--accent-blue);
-  padding: 9px 12px; margin-bottom: 8px;
+  padding: 12px 14px; margin-bottom: 10px;
   background: var(--bg-surface);
   border-radius: 0 var(--r1) var(--r1) 0;
 }
 .grammar-item:last-child { margin-bottom: 0; }
-.grammar-pat { font-size: 14px; font-weight: 500; color: var(--text-primary); }
-.grammar-meaning { font-size: 12px; color: var(--text-secondary); margin-top: 2px; }
-.grammar-ex { font-size: 13px; color: var(--text-primary); margin-top: 6px; line-height: 1.8; }
-.grammar-ex-zh { font-size: 12px; color: var(--text-tertiary); margin-top: 2px; }
+.grammar-pat { font-size: 16px; font-weight: 500; color: var(--text-primary); }
+.grammar-meaning { font-size: 14px; color: var(--text-secondary); margin-top: 3px; }
+.grammar-ex { font-size: 15px; color: var(--text-primary); margin-top: 8px; line-height: 1.85; }
+.grammar-ex-zh { font-size: 14px; color: var(--text-tertiary); margin-top: 3px; }
 
 /* ── Key sentences ── */
 .sent-item {
-  padding-bottom: 13px; margin-bottom: 13px;
+  padding-bottom: 16px; margin-bottom: 16px;
   border-bottom: 1px solid var(--border-light);
 }
 .sent-item:last-child { border-bottom: none; padding-bottom: 0; margin-bottom: 0; }
-.sent-jp { font-size: 14px; line-height: 1.9; color: var(--text-primary); }
-.sent-zh { font-size: 13px; color: var(--text-secondary); margin-top: 4px; }
+.sent-jp { font-size: 16px; line-height: 1.9; color: var(--text-primary); }
+.sent-zh { font-size: 15px; color: var(--text-secondary); margin-top: 5px; line-height: 1.7; }
 .sent-note {
-  font-size: 12px; color: var(--text-tertiary); margin-top: 5px;
-  background: var(--bg-surface); padding: 6px 10px; border-radius: var(--r1);
+  font-size: 13px; color: var(--text-tertiary); margin-top: 6px;
+  background: var(--bg-surface); padding: 8px 12px; border-radius: var(--r1);
+  line-height: 1.7;
 }
 
 /* ── States ── */
@@ -212,10 +208,10 @@ rt { font-size: 0.5em; color: var(--accent-blue); font-weight: 500; }
   text-align: center; padding: 4rem 1rem;
   background: var(--bg-card); border-radius: var(--r2);
   border: 1px dashed var(--border-medium);
-  color: var(--text-secondary); font-size: 14px;
+  color: var(--text-secondary); font-size: 15px;
 }
-.empty-icon { font-size: 32px; margin-bottom: 12px; }
-.date-row { text-align: right; font-size: 12px; color: var(--text-tertiary); margin-bottom: 10px; }
+.empty-icon { font-size: 36px; margin-bottom: 14px; }
+.date-row { text-align: right; font-size: 13px; color: var(--text-tertiary); margin-bottom: 12px; }
 
 /* ── Modal ── */
 .modal-overlay {
@@ -227,30 +223,30 @@ rt { font-size: 0.5em; color: var(--accent-blue); font-weight: 500; }
 .modal {
   background: var(--bg-card);
   border-radius: var(--r2) var(--r2) 0 0;
-  padding: 24px 20px calc(24px + var(--safe-bottom));
+  padding: 26px 20px calc(26px + var(--safe-bottom));
   width: 100%; max-width: 500px;
 }
-.modal h3 { font-size: 16px; font-weight: 500; margin-bottom: 6px; color: var(--text-primary); }
-.modal p { font-size: 13px; color: var(--text-secondary); margin-bottom: 16px; line-height: 1.6; }
-.modal-field { margin-bottom: 14px; }
-.modal-field label { display: block; font-size: 12px; color: var(--text-tertiary); margin-bottom: 5px; }
+.modal h3 { font-size: 18px; font-weight: 500; margin-bottom: 8px; color: var(--text-primary); }
+.modal p { font-size: 14px; color: var(--text-secondary); margin-bottom: 18px; line-height: 1.6; }
+.modal-field { margin-bottom: 16px; }
+.modal-field label { display: block; font-size: 13px; color: var(--text-tertiary); margin-bottom: 6px; }
 .modal-field input {
-  width: 100%; padding: 10px 12px; border-radius: var(--r1);
+  width: 100%; padding: 11px 14px; border-radius: var(--r1);
   border: 1px solid var(--border-medium);
   background: var(--bg-surface); color: var(--text-primary);
-  font-size: 14px; font-family: inherit;
+  font-size: 15px; font-family: inherit;
 }
-.hint { font-size: 11px; color: var(--text-tertiary); margin-top: 5px; line-height: 1.5; }
+.hint { font-size: 12px; color: var(--text-tertiary); margin-top: 6px; line-height: 1.6; }
 .modal-btn {
-  width: 100%; padding: 13px; border-radius: var(--r1);
+  width: 100%; padding: 14px; border-radius: var(--r1);
   border: none; background: var(--tab-active-bg);
-  color: var(--tab-active-text); font-size: 14px; font-weight: 500;
-  cursor: pointer; font-family: inherit; margin-bottom: 8px;
+  color: var(--tab-active-text); font-size: 16px; font-weight: 500;
+  cursor: pointer; font-family: inherit; margin-bottom: 10px;
 }
 .modal-cancel {
-  width: 100%; padding: 11px; border-radius: var(--r1);
+  width: 100%; padding: 12px; border-radius: var(--r1);
   border: 1px solid var(--border-medium); background: transparent;
-  color: var(--text-secondary); font-size: 14px;
+  color: var(--text-secondary); font-size: 15px;
   cursor: pointer; font-family: inherit;
 }
 </style>
@@ -441,7 +437,7 @@ async function triggerGenerate() {
     });
 
     if (res.status === 204) {
-      btn.textContent = '⏳ 生成中（約1分）...';
+      btn.textContent = '⏳ 生成中（約2分）...';
       showStatus('✅ リクエスト完了！Gemini がニュースを生成中です...');
       startPolling();
     } else {
@@ -457,7 +453,7 @@ async function triggerGenerate() {
 
 function startPolling() {
   let attempts = 0;
-  const maxAttempts = 30;
+  const maxAttempts = 40;
   const prevDate = generatedData?.date;
   clearInterval(pollTimer);
   pollTimer = setInterval(async () => {
