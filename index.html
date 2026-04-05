@@ -27,7 +27,6 @@
 
   --border-light:  rgba(120,110,100,0.10);
   --border-medium: rgba(120,110,100,0.18);
-  --border-strong: rgba(120,110,100,0.30);
 
   --accent-blue:    #8fa8b8;
   --tab-active-bg:  #4a4540;
@@ -45,7 +44,6 @@ body {
   color: var(--text-primary);
   min-height: 100dvh;
   font-size: 17px;
-  line-height: 1.7;
   padding-bottom: calc(72px + var(--safe-bottom));
 }
 
@@ -57,22 +55,26 @@ rt { font-size: 0.52em; color: var(--accent-blue); font-weight: 500; }
   position: sticky; top: 0; z-index: 100;
   background: var(--bg-card);
   border-bottom: 1px solid var(--border-light);
-  padding: calc(14px + var(--safe-top)) 16px 0;
+  padding: calc(10px + var(--safe-top)) 12px 0;
 }
 .topbar-row {
   display: flex; align-items: center;
-  justify-content: space-between; margin-bottom: 14px;
+  justify-content: space-between;
+  margin-bottom: 10px; gap: 8px;
 }
 .app-title {
-  font-size: 18px; font-weight: 500;
-  color: var(--text-primary); letter-spacing: 0.02em;
+  font-size: 14px; font-weight: 500;
+  color: var(--text-primary);
+  white-space: nowrap; overflow: hidden;
+  text-overflow: ellipsis; flex: 1;
 }
-.topbar-actions { display: flex; gap: 8px; }
+.topbar-actions { display: flex; gap: 6px; flex-shrink: 0; }
 .icon-btn {
-  font-size: 13px; padding: 6px 14px; border-radius: 99px;
+  font-size: 12px; padding: 5px 10px; border-radius: 99px;
   border: 1px solid var(--border-medium);
   background: transparent; color: var(--text-secondary);
   cursor: pointer; font-family: inherit; transition: all 0.15s;
+  white-space: nowrap;
 }
 .icon-btn.on {
   background: var(--tab-active-bg);
@@ -83,12 +85,12 @@ rt { font-size: 0.52em; color: var(--accent-blue); font-weight: 500; }
 /* ── Tabs ── */
 .tabs-wrap {
   overflow-x: auto; -webkit-overflow-scrolling: touch;
-  scrollbar-width: none; padding-bottom: 12px;
+  scrollbar-width: none; padding-bottom: 10px;
 }
 .tabs-wrap::-webkit-scrollbar { display: none; }
 .tabs { display: flex; gap: 6px; width: max-content; }
 .tab-btn {
-  padding: 7px 16px; border-radius: 99px;
+  padding: 6px 14px; border-radius: 99px;
   border: 1px solid var(--border-medium);
   background: transparent; font-size: 13px; font-weight: 500;
   color: var(--text-secondary); cursor: pointer;
@@ -335,7 +337,7 @@ let generatedData = null;
 let pollTimer = null;
 
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('/sw.js').then(reg => {
+  navigator.serviceWorker.register('./sw.js').then(reg => {
     const saved = localStorage.getItem('notifyTime');
     if (saved && Notification.permission === 'granted') {
       const [h, m] = saved.split(':').map(Number);
@@ -363,7 +365,7 @@ window.addEventListener('load', () => {
 
 async function loadExistingNews() {
   try {
-    const res = await fetch('today.json?t=' + Date.now());
+    const res = await fetch('./today.json?t=' + Date.now());
     if (res.ok) {
       const data = await res.json();
       generatedData = data;
@@ -435,7 +437,6 @@ async function triggerGenerate() {
       },
       body: JSON.stringify({ event_type: 'generate-news' })
     });
-
     if (res.status === 204) {
       btn.textContent = '⏳ 生成中（約2分）...';
       showStatus('✅ リクエスト完了！Gemini がニュースを生成中です...');
@@ -459,7 +460,7 @@ function startPolling() {
   pollTimer = setInterval(async () => {
     attempts++;
     try {
-      const res = await fetch('today.json?t=' + Date.now());
+      const res = await fetch('./today.json?t=' + Date.now());
       if (res.ok) {
         const data = await res.json();
         if (data.date !== prevDate || !prevDate) {
