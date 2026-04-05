@@ -10,12 +10,16 @@ const today = now.getFullYear() + '\u5e74' +
 console.log('Generating news for:', today);
 
 const categories = [
-  { id: 'tech',       name: '\u30c6\u30af\u30ce\u30ed\u30b8\u30fc' },
-  { id: 'urban',      name: '\u90fd\u5e02\u66f4\u65b0' },
-  { id: 'realestate', name: '\u4e0d\u52d5\u7523\u5e02\u5834' },
-  { id: 'economy',    name: '\u7d4c\u6e08' },
-  { id: 'agri',       name: '\u8fb2\u696d' }
+  { id: 'tech',       name: '\u30c6\u30af\u30ce\u30ed\u30b8\u30fc',   nameZh: '\u79d1\u6280' },
+  { id: 'urban',      name: '\u90fd\u5e02\u518d\u958b\u767a',          nameZh: '\u90fd\u5e02\u518d\u958b\u767a' },
+  { id: 'realestate', name: '\u4e0d\u52d5\u7523\u5e02\u5834',          nameZh: '\u4e0d\u52d5\u7522\u5e02\u5834' },
+  { id: 'economy',    name: '\u7d4c\u6e08',                            nameZh: '\u7d93\u6fdf' },
+  { id: 'agri',       name: '\u8fb2\u696d',                            nameZh: '\u8fb2\u696d' }
 ];
+
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
 
 function callGemini(prompt) {
   return new Promise((resolve, reject) => {
@@ -67,60 +71,56 @@ function callGemini(prompt) {
   });
 }
 
-function buildPrompt(catId, catName, today) {
+function buildPrompt(catId, catName, catNameZh, today) {
   const schema = JSON.stringify({
     category: catId,
-    titleJp: "News headline in Japanese, plain kanji only, no furigana",
-    titleZh: "Chinese translation of title",
-    summaryJp: "3-sentence summary in Japanese. Plain text, no furigana, no parentheses for readings.",
-    summaryZh: "Chinese translation of summary",
-    source: "Media name",
+    titleJp: "News headline in Japanese, plain kanji only",
+    titleZh: "\u7e41\u9ad4\u4e2d\u6587\u6a19\u984c",
+    summaryJp: "3-sentence summary in Japanese. Plain text only, no furigana, no parentheses.",
+    summaryZh: "\u7e41\u9ad4\u4e2d\u6587\u6458\u8981\uff0c3\u53e5\u8a71",
+    source: "Media name in Japanese",
     vocabulary: [
-      { word: "kanji word", reading: "hiragana reading", meaning: "Chinese meaning", example: "Example sentence in Japanese, plain text no furigana" },
-      { word: "kanji word", reading: "hiragana reading", meaning: "Chinese meaning", example: "Example sentence" },
-      { word: "kanji word", reading: "hiragana reading", meaning: "Chinese meaning", example: "Example sentence" },
-      { word: "kanji word", reading: "hiragana reading", meaning: "Chinese meaning", example: "Example sentence" },
-      { word: "kanji word", reading: "hiragana reading", meaning: "Chinese meaning", example: "Example sentence" }
+      { word: "kanji word", reading: "hiragana", meaning: "\u7e41\u9ad4\u4e2d\u6587\u610f\u601d", example: "Example sentence in Japanese, plain text" },
+      { word: "kanji word", reading: "hiragana", meaning: "\u7e41\u9ad4\u4e2d\u6587\u610f\u601d", example: "Example sentence" },
+      { word: "kanji word", reading: "hiragana", meaning: "\u7e41\u9ad4\u4e2d\u6587\u610f\u601d", example: "Example sentence" },
+      { word: "kanji word", reading: "hiragana", meaning: "\u7e41\u9ad4\u4e2d\u6587\u610f\u601d", example: "Example sentence" },
+      { word: "kanji word", reading: "hiragana", meaning: "\u7e41\u9ad4\u4e2d\u6587\u610f\u601d", example: "Example sentence" }
     ],
     grammarPoints: [
-      { pattern: "~grammar pattern", meaning: "Chinese explanation", example: "Japanese example sentence, plain text", exampleZh: "Chinese translation" },
-      { pattern: "~grammar pattern", meaning: "Chinese explanation", example: "Japanese example sentence", exampleZh: "Chinese translation" },
-      { pattern: "~grammar pattern", meaning: "Chinese explanation", example: "Japanese example sentence", exampleZh: "Chinese translation" }
+      { pattern: "~grammar pattern", meaning: "\u7e41\u9ad4\u4e2d\u6587\u8aaa\u660e", example: "Japanese example, plain text", exampleZh: "\u7e41\u9ad4\u4e2d\u6587\u7ffb\u8b6f" },
+      { pattern: "~grammar pattern", meaning: "\u7e41\u9ad4\u4e2d\u6587\u8aaa\u660e", example: "Japanese example", exampleZh: "\u7e41\u9ad4\u4e2d\u6587\u7ffb\u8b6f" },
+      { pattern: "~grammar pattern", meaning: "\u7e41\u9ad4\u4e2d\u6587\u8aaa\u660e", example: "Japanese example", exampleZh: "\u7e41\u9ad4\u4e2d\u6587\u7ffb\u8b6f" }
     ],
     keySentences: [
-      { jp: "Key sentence from news in Japanese, plain text", zh: "Chinese translation", note: "Grammar/vocabulary explanation in Chinese" },
-      { jp: "Key sentence", zh: "Chinese translation", note: "Explanation" },
-      { jp: "Key sentence", zh: "Chinese translation", note: "Explanation" }
+      { jp: "Key sentence in Japanese, plain text", zh: "\u7e41\u9ad4\u4e2d\u6587\u7ffb\u8b6f", note: "\u7e41\u9ad4\u4e2d\u6587\u8a9e\u6cd5\u8aaa\u660e" },
+      { jp: "Key sentence", zh: "\u7e41\u9ad4\u4e2d\u6587\u7ffb\u8b6f", note: "\u7e41\u9ad4\u4e2d\u6587\u8a9e\u6cd5\u8aaa\u660e" },
+      { jp: "Key sentence", zh: "\u7e41\u9ad4\u4e2d\u6587\u7ffb\u8b6f", note: "\u7e41\u9ad4\u4e2d\u6587\u8a9e\u6cd5\u8aaa\u660e" }
     ]
   }, null, 2);
 
   return [
-    'You are a Japanese language education expert.',
-    'Create N2-level Japanese learning content based on recent Japanese news about: ' + catName + ' (as of ' + today + ')',
+    'You are a Japanese language education expert for Taiwanese learners.',
+    'Create N2-level Japanese learning content based on recent news about: ' + catName + ' / ' + catNameZh + ' (as of ' + today + ')',
     '',
-    'STRICT RULES:',
-    '- Output ONLY valid JSON matching the schema below',
-    '- All Japanese text must be PLAIN TEXT: no furigana, no parentheses with readings, no HTML tags',
-    '- Only the "reading" field in vocabulary should contain hiragana readings',
-    '- No control characters or line breaks inside string values',
-    '- Keep all string values on a single line',
+    'CRITICAL RULES - follow exactly:',
+    '1. Output ONLY valid JSON matching the schema below. No extra text.',
+    '2. ALL Chinese text (titleZh, summaryZh, meaning, exampleZh, note) MUST be in Traditional Chinese (繁體中文). NOT Simplified Chinese.',
+    '3. All Japanese text must be plain text: NO furigana, NO parentheses with readings, NO HTML tags.',
+    '4. Only the "reading" field should contain hiragana readings.',
+    '5. No line breaks or control characters inside JSON string values.',
     '',
-    'JSON Schema:',
+    'JSON Schema (fill all fields with real content):',
     schema
   ].join('\n');
 }
 
 function cleanJSON(text) {
-  // Remove markdown code blocks
   text = text.replace(/^```[a-z]*\n?/gm, '').replace(/\n?```/gm, '').trim();
-
   const start = text.indexOf('{');
   const end = text.lastIndexOf('}') + 1;
-  if (start === -1 || end === 0) throw new Error('No JSON found. Response: ' + text.slice(0, 300));
+  if (start === -1 || end === 0) throw new Error('No JSON found. Response was: ' + text.slice(0, 200));
 
   let jsonStr = text.slice(start, end);
-
-  // Fix control characters inside strings
   let result = '';
   let inString = false;
   let escape = false;
@@ -134,34 +134,23 @@ function cleanJSON(text) {
       if (code === 9 || code === 10 || code === 13) result += ' ';
     } else { result += ch; }
   }
-
   return JSON.parse(result);
 }
 
-// Remove any accidental furigana patterns from text
 function stripFurigana(text) {
   if (typeof text !== 'string') return text;
-  // Remove （reading） patterns after kanji
-  return text.replace(/（[ぁ-ん]+）/g, '').replace(/\([ぁ-ん]+\)/g, '').trim();
+  return text.replace(/（[ぁ-ん\u30A0-\u30FF]+）/g, '').replace(/\([ぁ-ん\u30A0-\u30FF]+\)/g, '').trim();
 }
 
 function cleanArticle(article) {
-  // Strip furigana from all text fields except vocabulary.reading
-  article.titleJp = stripFurigana(article.titleJp || '');
-  article.summaryJp = stripFurigana(article.summaryJp || '');
-
+  article.titleJp    = stripFurigana(article.titleJp || '');
+  article.summaryJp  = stripFurigana(article.summaryJp || '');
   if (article.grammarPoints) {
-    for (const g of article.grammarPoints) {
-      g.example = stripFurigana(g.example || '');
-    }
+    for (const g of article.grammarPoints) g.example = stripFurigana(g.example || '');
   }
   if (article.keySentences) {
-    for (const s of article.keySentences) {
-      s.jp = stripFurigana(s.jp || '');
-    }
+    for (const s of article.keySentences) s.jp = stripFurigana(s.jp || '');
   }
-
-  // Add ruby tags to vocabulary words
   if (article.vocabulary) {
     for (const v of article.vocabulary) {
       v.example = stripFurigana(v.example || '');
@@ -170,16 +159,32 @@ function cleanArticle(article) {
       }
     }
   }
-
   return article;
 }
 
-async function generateArticle(cat) {
-  const prompt = buildPrompt(cat.id, cat.name, today);
-  const text = await callGemini(prompt);
-  console.log('Response for', cat.id, '- length:', text.length);
-  const article = cleanJSON(text);
-  return cleanArticle(article);
+async function generateArticleWithRetry(cat, maxRetries = 3) {
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      console.log('  Attempt', attempt + '/' + maxRetries);
+      const prompt = buildPrompt(cat.id, cat.name, cat.nameZh, today);
+      const text = await callGemini(prompt);
+      console.log('  Response length:', text.length);
+      if (text.length < 200) {
+        throw new Error('Response too short (' + text.length + ' chars): ' + text.slice(0, 100));
+      }
+      const article = cleanJSON(text);
+      return cleanArticle(article);
+    } catch(e) {
+      console.error('  Attempt', attempt, 'failed:', e.message);
+      if (attempt < maxRetries) {
+        const waitSec = attempt * 5;
+        console.log('  Waiting', waitSec, 'seconds before retry...');
+        await sleep(waitSec * 1000);
+      } else {
+        throw e;
+      }
+    }
+  }
 }
 
 async function main() {
@@ -188,11 +193,11 @@ async function main() {
   for (const cat of categories) {
     console.log('\nGenerating:', cat.name, '(' + cat.id + ')');
     try {
-      const article = await generateArticle(cat);
+      const article = await generateArticleWithRetry(cat);
       articles.push(article);
       console.log('Success:', cat.id);
     } catch(e) {
-      console.error('Failed:', cat.id, '-', e.message);
+      console.error('All attempts failed for', cat.id, ':', e.message);
       articles.push({
         category: cat.id,
         titleJp: cat.name,
@@ -204,6 +209,12 @@ async function main() {
         grammarPoints: [],
         keySentences: []
       });
+    }
+
+    // Wait between categories to avoid rate limiting
+    if (cat !== categories[categories.length - 1]) {
+      console.log('Waiting 3 seconds...');
+      await sleep(3000);
     }
   }
 
