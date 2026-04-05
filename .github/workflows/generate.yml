@@ -34,9 +34,10 @@ jobs:
               "台湾人学習者向けのN2レベルの学習コンテンツを作成してください。"
               "すべての漢字にrubyタグで読み仮名を付けてください。"
               "例：<ruby>東京<rt>とうきょう</rt></ruby>\n\n"
-              "以下のJSON形式のみで回答してください。JSONのみ出力し、他のテキストは含めないでください：\n"
+              "重要：JSONの文字列値の中に改行を含めないでください。すべての値は1行で書いてください。\n\n"
+              "以下のJSON形式のみで回答してください。JSONのみ出力し、コードブロックや他のテキストは含めないでください：\n"
               '{"date":"' + today + '","articles":['
-              '{"category":"tech","titleJp":"rubyタグ付き見出し","titleZh":"中文","summaryJp":"rubyタグ付き要約3文","summaryZh":"中文摘要","source":"メディア名",'
+              '{"category":"tech","titleJp":"rubyタグ付き見出し","titleZh":"中文","summaryJp":"rubyタグ付き要約（改行なし）","summaryZh":"中文摘要","source":"メディア名",'
               '"vocabulary":[{"word":"<ruby>単語<rt>読み</rt></ruby>","meaning":"中文意思","example":"例文"},{"word":"<ruby>単語<rt>読み</rt></ruby>","meaning":"中文意思","example":"例文"},{"word":"<ruby>単語<rt>読み</rt></ruby>","meaning":"中文意思","example":"例文"},{"word":"<ruby>単語<rt>読み</rt></ruby>","meaning":"中文意思","example":"例文"},{"word":"<ruby>単語<rt>読み</rt></ruby>","meaning":"中文意思","example":"例文"}],'
               '"grammarPoints":[{"pattern":"〜パターン","meaning":"中文說明","example":"例文","exampleZh":"翻譯"},{"pattern":"〜パターン","meaning":"中文說明","example":"例文","exampleZh":"翻譯"},{"pattern":"〜パターン","meaning":"中文說明","example":"例文","exampleZh":"翻譯"}],'
               '"keySentences":[{"jp":"文","zh":"翻譯","note":"解説"},{"jp":"文","zh":"翻譯","note":"解説"},{"jp":"文","zh":"翻譯","note":"解説"}]},'
@@ -64,7 +65,7 @@ jobs:
               "tools": [{"google_search": {}}],
               "generationConfig": {
                   "maxOutputTokens": 8192,
-                  "temperature": 0.5
+                  "temperature": 0.3
               }
           }).encode("utf-8")
 
@@ -84,17 +85,42 @@ jobs:
 
           text = text.strip()
           print("Raw text length:", len(text))
-          print("First 200 chars:", text[:200])
 
           # Clean markdown code blocks
-          text = re.sub(r'^```[a-z]*\n?', '', text, flags=re.MULTILINE)
-          text = re.sub(r'\n?```', '', text)
-          text = text.strip()
+          text = re.sub(r'```[a-z]*', '', text)
+          text = text.replace('```', '').strip()
 
-          # Find JSON
+          # Find JSON boundaries
           start = text.index("{")
           end = text.rindex("}") + 1
           json_str = text[start:end]
+
+          # Fix control characters inside JSON string values
+          # Replace literal newlines inside strings with space
+          def fix_json_string(s):
+              result = []
+              in_string = False
+              escape = False
+              for ch in s:
+                  if escape:
+                      result.append(ch)
+                      escape = False
+                  elif ch == '\\':
+                      result.append(ch)
+                      escape = True
+                  elif ch == '"':
+                      result.append(ch)
+                      in_string = not in_string
+                  elif in_string and ch in ('\n', '\r', '\t'):
+                      result.append(' ')
+                  elif in_string and ord(ch) < 32:
+                      # skip other control characters
+                      pass
+                  else:
+                      result.append(ch)
+              return ''.join(result)
+
+          json_str = fix_json_string(json_str)
 
           parsed = json.loads(json_str)
 
