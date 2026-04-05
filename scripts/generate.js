@@ -26,8 +26,8 @@ function callGemini(prompt) {
     const body = JSON.stringify({
       contents: [{ parts: [{ text: prompt }], role: 'user' }],
       generationConfig: {
-        maxOutputTokens: 3000,
-        temperature: 0.4,
+        maxOutputTokens: 2048,
+        temperature: 0.3,
         responseMimeType: 'application/json'
       }
     });
@@ -50,7 +50,14 @@ function callGemini(prompt) {
           const raw = Buffer.concat(chunks).toString('utf8');
           const parsed = JSON.parse(raw);
           if (parsed.error) {
-            reject(new Error('API Error: ' + JSON.stringify(parsed.error)));
+            const msg = parsed.error.message || JSON.stringify(parsed.error);
+            // Extract retry delay if present
+            let retryDelay = 60;
+            const match = msg.match(/retry in (\d+)/i);
+            if (match) retryDelay = parseInt(match[1]) + 5;
+            const err = new Error('API Error: ' + msg);
+            err.retryDelay = retryDelay;
+            reject(err);
             return;
           }
           let text = '';
@@ -72,45 +79,44 @@ function callGemini(prompt) {
 }
 
 function buildPrompt(catId, catName, catNameZh, today) {
-  const schema = JSON.stringify({
-    category: catId,
-    titleJp: "News headline in Japanese, plain kanji only",
-    titleZh: "\u7e41\u9ad4\u4e2d\u6587\u6a19\u984c",
-    summaryJp: "3-sentence summary in Japanese. Plain text only, no furigana, no parentheses.",
-    summaryZh: "\u7e41\u9ad4\u4e2d\u6587\u6458\u8981\uff0c3\u53e5\u8a71",
-    source: "Media name in Japanese",
-    vocabulary: [
-      { word: "kanji word", reading: "hiragana", meaning: "\u7e41\u9ad4\u4e2d\u6587\u610f\u601d", example: "Example sentence in Japanese, plain text" },
-      { word: "kanji word", reading: "hiragana", meaning: "\u7e41\u9ad4\u4e2d\u6587\u610f\u601d", example: "Example sentence" },
-      { word: "kanji word", reading: "hiragana", meaning: "\u7e41\u9ad4\u4e2d\u6587\u610f\u601d", example: "Example sentence" },
-      { word: "kanji word", reading: "hiragana", meaning: "\u7e41\u9ad4\u4e2d\u6587\u610f\u601d", example: "Example sentence" },
-      { word: "kanji word", reading: "hiragana", meaning: "\u7e41\u9ad4\u4e2d\u6587\u610f\u601d", example: "Example sentence" }
-    ],
-    grammarPoints: [
-      { pattern: "~grammar pattern", meaning: "\u7e41\u9ad4\u4e2d\u6587\u8aaa\u660e", example: "Japanese example, plain text", exampleZh: "\u7e41\u9ad4\u4e2d\u6587\u7ffb\u8b6f" },
-      { pattern: "~grammar pattern", meaning: "\u7e41\u9ad4\u4e2d\u6587\u8aaa\u660e", example: "Japanese example", exampleZh: "\u7e41\u9ad4\u4e2d\u6587\u7ffb\u8b6f" },
-      { pattern: "~grammar pattern", meaning: "\u7e41\u9ad4\u4e2d\u6587\u8aaa\u660e", example: "Japanese example", exampleZh: "\u7e41\u9ad4\u4e2d\u6587\u7ffb\u8b6f" }
-    ],
-    keySentences: [
-      { jp: "Key sentence in Japanese, plain text", zh: "\u7e41\u9ad4\u4e2d\u6587\u7ffb\u8b6f", note: "\u7e41\u9ad4\u4e2d\u6587\u8a9e\u6cd5\u8aaa\u660e" },
-      { jp: "Key sentence", zh: "\u7e41\u9ad4\u4e2d\u6587\u7ffb\u8b6f", note: "\u7e41\u9ad4\u4e2d\u6587\u8a9e\u6cd5\u8aaa\u660e" },
-      { jp: "Key sentence", zh: "\u7e41\u9ad4\u4e2d\u6587\u7ffb\u8b6f", note: "\u7e41\u9ad4\u4e2d\u6587\u8a9e\u6cd5\u8aaa\u660e" }
-    ]
-  }, null, 2);
-
   return [
     'You are a Japanese language education expert for Taiwanese learners.',
-    'Create N2-level Japanese learning content based on recent news about: ' + catName + ' / ' + catNameZh + ' (as of ' + today + ')',
+    'Topic: ' + catName + ' (' + catNameZh + ') news as of ' + today,
     '',
-    'CRITICAL RULES - follow exactly:',
-    '1. Output ONLY valid JSON matching the schema below. No extra text.',
-    '2. ALL Chinese text (titleZh, summaryZh, meaning, exampleZh, note) MUST be in Traditional Chinese (繁體中文). NOT Simplified Chinese.',
-    '3. All Japanese text must be plain text: NO furigana, NO parentheses with readings, NO HTML tags.',
-    '4. Only the "reading" field should contain hiragana readings.',
-    '5. No line breaks or control characters inside JSON string values.',
+    'RULES:',
+    '- Output ONLY valid JSON. No extra text outside the JSON.',
+    '- ALL Chinese must be Traditional Chinese (繁體中文), NOT Simplified.',
+    '- Japanese text: plain text only, NO furigana in parentheses, NO HTML tags.',
+    '- Only "reading" field contains hiragana.',
+    '- No newlines inside JSON string values.',
+    '- Keep all strings SHORT to avoid truncation.',
     '',
-    'JSON Schema (fill all fields with real content):',
-    schema
+    'Output this JSON with real content:',
+    '{',
+    '  "category": "' + catId + '",',
+    '  "titleJp": "Japanese headline",',
+    '  "titleZh": "繁體中文標題",',
+    '  "summaryJp": "2-sentence Japanese summary, plain text only",',
+    '  "summaryZh": "繁體中文摘要，2句",',
+    '  "source": "Media name",',
+    '  "vocabulary": [',
+    '    {"word":"漢字","reading":"よみ","meaning":"繁體意思","example":"短い例文"},',
+    '    {"word":"漢字","reading":"よみ","meaning":"繁體意思","example":"短い例文"},',
+    '    {"word":"漢字","reading":"よみ","meaning":"繁體意思","example":"短い例文"},',
+    '    {"word":"漢字","reading":"よみ","meaning":"繁體意思","example":"短い例文"},',
+    '    {"word":"漢字","reading":"よみ","meaning":"繁體意思","example":"短い例文"}',
+    '  ],',
+    '  "grammarPoints": [',
+    '    {"pattern":"〜文法","meaning":"繁體說明","example":"例文","exampleZh":"繁體翻譯"},',
+    '    {"pattern":"〜文法","meaning":"繁體說明","example":"例文","exampleZh":"繁體翻譯"},',
+    '    {"pattern":"〜文法","meaning":"繁體說明","example":"例文","exampleZh":"繁體翻譯"}',
+    '  ],',
+    '  "keySentences": [',
+    '    {"jp":"日本語文","zh":"繁體翻譯","note":"繁體解說"},',
+    '    {"jp":"日本語文","zh":"繁體翻譯","note":"繁體解說"},',
+    '    {"jp":"日本語文","zh":"繁體翻譯","note":"繁體解說"}',
+    '  ]',
+    '}'
   ].join('\n');
 }
 
@@ -118,7 +124,7 @@ function cleanJSON(text) {
   text = text.replace(/^```[a-z]*\n?/gm, '').replace(/\n?```/gm, '').trim();
   const start = text.indexOf('{');
   const end = text.lastIndexOf('}') + 1;
-  if (start === -1 || end === 0) throw new Error('No JSON found. Response was: ' + text.slice(0, 200));
+  if (start === -1 || end === 0) throw new Error('No JSON found. Got: ' + text.slice(0, 150));
 
   let jsonStr = text.slice(start, end);
   let result = '';
@@ -143,8 +149,8 @@ function stripFurigana(text) {
 }
 
 function cleanArticle(article) {
-  article.titleJp    = stripFurigana(article.titleJp || '');
-  article.summaryJp  = stripFurigana(article.summaryJp || '');
+  article.titleJp   = stripFurigana(article.titleJp || '');
+  article.summaryJp = stripFurigana(article.summaryJp || '');
   if (article.grammarPoints) {
     for (const g of article.grammarPoints) g.example = stripFurigana(g.example || '');
   }
@@ -165,20 +171,21 @@ function cleanArticle(article) {
 async function generateArticleWithRetry(cat, maxRetries = 3) {
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
-      console.log('  Attempt', attempt + '/' + maxRetries);
+      console.log('  Attempt ' + attempt + '/' + maxRetries);
       const prompt = buildPrompt(cat.id, cat.name, cat.nameZh, today);
       const text = await callGemini(prompt);
       console.log('  Response length:', text.length);
-      if (text.length < 200) {
-        throw new Error('Response too short (' + text.length + ' chars): ' + text.slice(0, 100));
+      if (text.length < 100) {
+        throw new Error('Response too short: ' + text);
       }
       const article = cleanJSON(text);
       return cleanArticle(article);
     } catch(e) {
-      console.error('  Attempt', attempt, 'failed:', e.message);
+      console.error('  Attempt ' + attempt + ' failed:', e.message.slice(0, 120));
       if (attempt < maxRetries) {
-        const waitSec = attempt * 5;
-        console.log('  Waiting', waitSec, 'seconds before retry...');
+        // If API gave us a retry delay, use it; otherwise wait longer each time
+        const waitSec = e.retryDelay || (attempt * 40);
+        console.log('  Waiting ' + waitSec + 's before retry...');
         await sleep(waitSec * 1000);
       } else {
         throw e;
@@ -190,31 +197,29 @@ async function generateArticleWithRetry(cat, maxRetries = 3) {
 async function main() {
   const articles = [];
 
-  for (const cat of categories) {
-    console.log('\nGenerating:', cat.name, '(' + cat.id + ')');
+  for (let i = 0; i < categories.length; i++) {
+    const cat = categories[i];
+    console.log('\nGenerating: ' + cat.name + ' (' + cat.id + ')');
     try {
       const article = await generateArticleWithRetry(cat);
       articles.push(article);
       console.log('Success:', cat.id);
     } catch(e) {
-      console.error('All attempts failed for', cat.id, ':', e.message);
+      console.error('All attempts failed for', cat.id, ':', e.message.slice(0, 100));
       articles.push({
         category: cat.id,
         titleJp: cat.name,
         titleZh: '\u751f\u6210\u5931\u6557',
         summaryJp: '\u30b3\u30f3\u30c6\u30f3\u30c4\u306e\u751f\u6210\u306b\u5931\u6557\u3057\u307e\u3057\u305f\u3002',
         summaryZh: '\u5167\u5bb9\u751f\u6210\u5931\u6557\uff0c\u8acb\u7a0d\u5f8c\u518d\u8a66\u3002',
-        source: '',
-        vocabulary: [],
-        grammarPoints: [],
-        keySentences: []
+        source: '', vocabulary: [], grammarPoints: [], keySentences: []
       });
     }
 
-    // Wait between categories to avoid rate limiting
-    if (cat !== categories[categories.length - 1]) {
-      console.log('Waiting 3 seconds...');
-      await sleep(3000);
+    // Wait between categories to respect rate limits
+    if (i < categories.length - 1) {
+      console.log('Waiting 15s before next category...');
+      await sleep(15000);
     }
   }
 
