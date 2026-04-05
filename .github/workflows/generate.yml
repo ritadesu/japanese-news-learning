@@ -20,6 +20,8 @@ jobs:
       - name: Run generator script
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+          NOTION_DB_ID: ${{ secrets.NOTION_DB_ID }}
         run: node scripts/generate.js
 
       - name: Commit and push today.json
