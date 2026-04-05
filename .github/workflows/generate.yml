@@ -21,20 +21,44 @@ jobs:
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: |
-          python3 << 'PYEOF'
-          import os, json, urllib.request, urllib.error, datetime
+          python3 - << 'EOF'
+          import os, json, urllib.request, datetime
 
           api_key = os.environ["GEMINI_API_KEY"]
           today = datetime.datetime.now(
               datetime.timezone(datetime.timedelta(hours=8))
           ).strftime("%Y年%m月%d日")
 
-          prompt = f"""あなたは日本語教育の専門家です。今日（{today}）の日本の最新ニュースを基に、台湾人学習者向けのN2レベルの学習コンテンツを作成してください。すべての漢字にrubyタグで読み仮名を付けてください。例：<ruby>東京<rt>とうきょう</rt></ruby>
-
-以下のJSON形式のみで回答してください（前置き・コードブロック不要）：
-{{"date":"{today}","articles":[{{"category":"tech","titleJp":"見出し","titleZh":"中文","summaryJp":"要約","summaryZh":"中文","source":"メディア","vocabulary":[{{"word":"単語","meaning":"中文","example":"例文"}},{{"word":"単語","meaning":"中文","example":"例文"}},{{"word":"単語","meaning":"中文","example":"例文"}},{{"word":"単語","meaning":"中文","example":"例文"}},{{"word":"単語","meaning":"中文","example":"例文"}}],"grammarPoints":[{{"pattern":"パターン","meaning":"中文","example":"例文","exampleZh":"翻譯"}},{{"pattern":"パターン","meaning":"中文","example":"例文","exampleZh":"翻譯"}},{{"pattern":"パターン","meaning":"中文","example":"例文","exampleZh":"翻譯"}}],"keySentences":[{{"jp":"文","zh":"翻譯","note":"解説"}},{{"jp":"文","zh":"翻譯","note":"解説"}},{{"jp":"文","zh":"翻譯","note":"解説"}}]}},{{"category":"urban","titleJp":"見出し","titleZh":"中文","summaryJp":"要約","summaryZh":"中文","source":"メディア","vocabulary":[{{"word":"","meaning":"","example":""}},{{"word":"","meaning":"","example":""}},{{"word":"","meaning":"","example":""}},{{"word":"","meaning":"","example":""}},{{"word":"","meaning":"","example":""}}],"grammarPoints":[{{"pattern":"","meaning":"","example":"","exampleZh":""}},{{"pattern":"","meaning":"","example":"","exampleZh":""}},{{"pattern":"","meaning":"","example":"","exampleZh":""}}],"keySentences":[{{"jp":"","zh":"","note":""}},{{"jp":"","zh":"","note":""}},{{"jp":"","zh":"","note":""}}]}},{{"category":"realestate","titleJp":"見出し","titleZh":"中文","summaryJp":"要約","summaryZh":"中文","source":"メディア","vocabulary":[{{"word":"","meaning":"","example":""}},{{"word":"","meaning":"","example":""}},{{"word":"","meaning":"","example":""}},{{"word":"","meaning":"","example":""}},{{"word":"","meaning":"","example":""}}],"grammarPoints":[{{"pattern":"","meaning":"","example":"","exampleZh":""}},{{"pattern":"","meaning":"","example":"","exampleZh":""}},{{"pattern":"","meaning":"","example":"","exampleZh":""}}],"keySentences":[{{"jp":"","zh":"","note":""}},{{"jp":"","zh":"","note":""}},{{"jp":"","zh":"","note":""}}]}},{{"category":"economy","titleJp":"見出し","titleZh":"中文","summaryJp":"要約","summaryZh":"中文","source":"メディア","vocabulary":[{{"word":"","meaning":"","example":""}},{{"word":"","meaning":"","example":""}},{{"word":"","meaning":"","example":""}},{{"word":"","meaning":"","example":""}},{{"word":"","meaning":"","example":""}}],"grammarPoints":[{{"pattern":"","meaning":"","example":"","exampleZh":""}},{{"pattern":"","meaning":"","example":"","exampleZh":""}},{{"pattern":"","meaning":"","example":"","exampleZh":""}}],"keySentences":[{{"jp":"","zh":"","note":""}},{{"jp":"","zh":"","note":""}},{{"jp":"","zh":"","note":""}}]}},{{"category":"agri","titleJp":"見出し","titleZh":"中文","summaryJp":"要約","summaryZh":"中文","source":"メディア","vocabulary":[{{"word":"","meaning":"","example":""}},{{"word":"","meaning":"","example":""}},{{"word":"","meaning":"","example":""}},{{"word":"","meaning":"","example":""}},{{"word":"","meaning":"","example":""}}],"grammarPoints":[{{"pattern":"","meaning":"","example":"","exampleZh":""}},{{"pattern":"","meaning":"","example":"","exampleZh":""}},{{"pattern":"","meaning":"","example":"","exampleZh":""}}],"keySentences":[{{"jp":"","zh":"","note":""}},{{"jp":"","zh":"","note":""}},{{"jp":"","zh":"","note":""}}]}}]}}
-
-全フィールドを実際のコンテンツで埋め、漢字にはrubyタグで読み仮名を付けてください。"""
+          prompt = (
+              "あなたは日本語教育の専門家です。今日（" + today + "）の日本の最新ニュースを基に、"
+              "台湾人学習者向けのN2レベルの学習コンテンツを作成してください。"
+              "すべての漢字にrubyタグで読み仮名を付けてください。"
+              "例：<ruby>東京<rt>とうきょう</rt></ruby>\n\n"
+              "以下のJSON形式のみで回答してください（前置き・コードブロック不要）：\n"
+              '{"date":"' + today + '","articles":['
+              '{"category":"tech","titleJp":"見出し","titleZh":"中文","summaryJp":"要約","summaryZh":"中文","source":"メディア",'
+              '"vocabulary":[{"word":"単語","meaning":"中文","example":"例文"},{"word":"単語","meaning":"中文","example":"例文"},{"word":"単語","meaning":"中文","example":"例文"},{"word":"単語","meaning":"中文","example":"例文"},{"word":"単語","meaning":"中文","example":"例文"}],'
+              '"grammarPoints":[{"pattern":"パターン","meaning":"中文","example":"例文","exampleZh":"翻譯"},{"pattern":"パターン","meaning":"中文","example":"例文","exampleZh":"翻譯"},{"pattern":"パターン","meaning":"中文","example":"例文","exampleZh":"翻譯"}],'
+              '"keySentences":[{"jp":"文","zh":"翻譯","note":"解説"},{"jp":"文","zh":"翻譯","note":"解説"},{"jp":"文","zh":"翻譯","note":"解説"}]},'
+              '{"category":"urban","titleJp":"見出し","titleZh":"中文","summaryJp":"要約","summaryZh":"中文","source":"メディア",'
+              '"vocabulary":[{"word":"","meaning":"","example":""},{"word":"","meaning":"","example":""},{"word":"","meaning":"","example":""},{"word":"","meaning":"","example":""},{"word":"","meaning":"","example":""}],'
+              '"grammarPoints":[{"pattern":"","meaning":"","example":"","exampleZh":""},{"pattern":"","meaning":"","example":"","exampleZh":""},{"pattern":"","meaning":"","example":"","exampleZh":""}],'
+              '"keySentences":[{"jp":"","zh":"","note":""},{"jp":"","zh":"","note":""},{"jp":"","zh":"","note":""}]},'
+              '{"category":"realestate","titleJp":"見出し","titleZh":"中文","summaryJp":"要約","summaryZh":"中文","source":"メディア",'
+              '"vocabulary":[{"word":"","meaning":"","example":""},{"word":"","meaning":"","example":""},{"word":"","meaning":"","example":""},{"word":"","meaning":"","example":""},{"word":"","meaning":"","example":""}],'
+              '"grammarPoints":[{"pattern":"","meaning":"","example":"","exampleZh":""},{"pattern":"","meaning":"","example":"","exampleZh":""},{"pattern":"","meaning":"","example":"","exampleZh":""}],'
+              '"keySentences":[{"jp":"","zh":"","note":""},{"jp":"","zh":"","note":""},{"jp":"","zh":"","note":""}]},'
+              '{"category":"economy","titleJp":"見出し","titleZh":"中文","summaryJp":"要約","summaryZh":"中文","source":"メディア",'
+              '"vocabulary":[{"word":"","meaning":"","example":""},{"word":"","meaning":"","example":""},{"word":"","meaning":"","example":""},{"word":"","meaning":"","example":""},{"word":"","meaning":"","example":""}],'
+              '"grammarPoints":[{"pattern":"","meaning":"","example":"","exampleZh":""},{"pattern":"","meaning":"","example":"","exampleZh":""},{"pattern":"","meaning":"","example":"","exampleZh":""}],'
+              '"keySentences":[{"jp":"","zh":"","note":""},{"jp":"","zh":"","note":""},{"jp":"","zh":"","note":""}]},'
+              '{"category":"agri","titleJp":"見出し","titleZh":"中文","summaryJp":"要約","summaryZh":"中文","source":"メディア",'
+              '"vocabulary":[{"word":"","meaning":"","example":""},{"word":"","meaning":"","example":""},{"word":"","meaning":"","example":""},{"word":"","meaning":"","example":""},{"word":"","meaning":"","example":""}],'
+              '"grammarPoints":[{"pattern":"","meaning":"","example":"","exampleZh":""},{"pattern":"","meaning":"","example":"","exampleZh":""},{"pattern":"","meaning":"","example":"","exampleZh":""}],'
+              '"keySentences":[{"jp":"","zh":"","note":""},{"jp":"","zh":"","note":""},{"jp":"","zh":"","note":""}]}'
+              ']}\n\n'
+              "全フィールドを実際のコンテンツで埋め、漢字にはrubyタグで読み仮名を付けてください。"
+          )
 
           payload = json.dumps({
               "contents": [{"parts": [{"text": prompt}], "role": "user"}],
@@ -42,7 +66,7 @@ jobs:
               "generationConfig": {"maxOutputTokens": 8192}
           }).encode("utf-8")
 
-          url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={api_key}"
+          url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=" + api_key
           req = urllib.request.Request(url, data=payload, headers={"Content-Type": "application/json"})
 
           with urllib.request.urlopen(req, timeout=120) as res:
@@ -57,8 +81,8 @@ jobs:
           with open("today.json", "w", encoding="utf-8") as f:
               json.dump(parsed, f, ensure_ascii=False, indent=2)
 
-          print(f"Done: {len(parsed['articles'])} articles for {today}")
-          PYEOF
+          print("Done: " + str(len(parsed["articles"])) + " articles for " + today)
+          EOF
 
       - name: Commit and push today.json
         run: |
