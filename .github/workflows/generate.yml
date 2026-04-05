@@ -2,7 +2,7 @@ name: Generate Daily News
 
 on:
   schedule:
-    - cron: '0 0 * * *'
+    - cron: '50 23 * * *'
   repository_dispatch:
     types: [generate-news]
   workflow_dispatch:
@@ -31,30 +31,29 @@ jobs:
 
           prompt = (
               "あなたは日本語教育の専門家です。今日（" + today + "）の日本の最新ニュースを基に、"
-              "台湾人学習者向けのN2レベルの学習コンテンツを作成してください。"
-              "すべての漢字にrubyタグで読み仮名を付けてください。"
-              "例：<ruby>東京<rt>とうきょう</rt></ruby>\n\n"
-              "重要：JSONの文字列値の中に改行を含めないでください。すべての値は1行で書いてください。\n\n"
-              "以下のJSON形式のみで回答してください。JSONのみ出力し、コードブロックや他のテキストは含めないでください：\n"
+              "台湾人学習者向けのN2レベルの学習コンテンツを5カテゴリ分作成してください。\n\n"
+              "【重要】JSONの文字列の中にHTMLタグ・改行・特殊文字を含めないでください。プレーンテキストのみ使用してください。\n"
+              "漢字の読み方は「word_reading」フィールドに別途記載してください。\n\n"
+              "JSONのみ出力してください（コードブロック・説明文不要）：\n"
               '{"date":"' + today + '","articles":['
-              '{"category":"tech","titleJp":"rubyタグ付き見出し","titleZh":"中文","summaryJp":"rubyタグ付き要約（改行なし）","summaryZh":"中文摘要","source":"メディア名",'
-              '"vocabulary":[{"word":"<ruby>単語<rt>読み</rt></ruby>","meaning":"中文意思","example":"例文"},{"word":"<ruby>単語<rt>読み</rt></ruby>","meaning":"中文意思","example":"例文"},{"word":"<ruby>単語<rt>読み</rt></ruby>","meaning":"中文意思","example":"例文"},{"word":"<ruby>単語<rt>読み</rt></ruby>","meaning":"中文意思","example":"例文"},{"word":"<ruby>単語<rt>読み</rt></ruby>","meaning":"中文意思","example":"例文"}],'
-              '"grammarPoints":[{"pattern":"〜パターン","meaning":"中文說明","example":"例文","exampleZh":"翻譯"},{"pattern":"〜パターン","meaning":"中文說明","example":"例文","exampleZh":"翻譯"},{"pattern":"〜パターン","meaning":"中文說明","example":"例文","exampleZh":"翻譯"}],'
-              '"keySentences":[{"jp":"文","zh":"翻譯","note":"解説"},{"jp":"文","zh":"翻譯","note":"解説"},{"jp":"文","zh":"翻譯","note":"解説"}]},'
-              '{"category":"urban","titleJp":"見出し","titleZh":"中文","summaryJp":"要約","summaryZh":"中文","source":"メディア",'
-              '"vocabulary":[{"word":"単語","meaning":"中文","example":"例文"},{"word":"単語","meaning":"中文","example":"例文"},{"word":"単語","meaning":"中文","example":"例文"},{"word":"単語","meaning":"中文","example":"例文"},{"word":"単語","meaning":"中文","example":"例文"}],'
+              '{"category":"tech","titleJp":"テクノロジーニュース見出し","titleZh":"中文翻譯","summaryJp":"3文の要約。漢字の後ろに括弧で読みを入れてください。例：東京（とうきょう）","summaryZh":"中文摘要","source":"メディア名",'
+              '"vocabulary":[{"word":"単語","reading":"読み方","meaning":"中文意思","example":"例文（読み付き）"},{"word":"単語","reading":"読み方","meaning":"中文意思","example":"例文"},{"word":"単語","reading":"読み方","meaning":"中文意思","example":"例文"},{"word":"単語","reading":"読み方","meaning":"中文意思","example":"例文"},{"word":"単語","reading":"読み方","meaning":"中文意思","example":"例文"}],'
+              '"grammarPoints":[{"pattern":"パターン","meaning":"中文說明","example":"例文（読み付き）","exampleZh":"翻譯"},{"pattern":"パターン","meaning":"中文說明","example":"例文","exampleZh":"翻譯"},{"pattern":"パターン","meaning":"中文說明","example":"例文","exampleZh":"翻譯"}],'
+              '"keySentences":[{"jp":"文（読み付き）","zh":"翻譯","note":"解説"},{"jp":"文","zh":"翻譯","note":"解説"},{"jp":"文","zh":"翻譯","note":"解説"}]},'
+              '{"category":"urban","titleJp":"都市更新ニュース","titleZh":"中文","summaryJp":"要約","summaryZh":"中文","source":"メディア",'
+              '"vocabulary":[{"word":"単語","reading":"読み","meaning":"中文","example":"例文"},{"word":"単語","reading":"読み","meaning":"中文","example":"例文"},{"word":"単語","reading":"読み","meaning":"中文","example":"例文"},{"word":"単語","reading":"読み","meaning":"中文","example":"例文"},{"word":"単語","reading":"読み","meaning":"中文","example":"例文"}],'
               '"grammarPoints":[{"pattern":"パターン","meaning":"中文","example":"例文","exampleZh":"翻譯"},{"pattern":"パターン","meaning":"中文","example":"例文","exampleZh":"翻譯"},{"pattern":"パターン","meaning":"中文","example":"例文","exampleZh":"翻譯"}],'
               '"keySentences":[{"jp":"文","zh":"翻譯","note":"解説"},{"jp":"文","zh":"翻譯","note":"解説"},{"jp":"文","zh":"翻譯","note":"解説"}]},'
-              '{"category":"realestate","titleJp":"見出し","titleZh":"中文","summaryJp":"要約","summaryZh":"中文","source":"メディア",'
-              '"vocabulary":[{"word":"単語","meaning":"中文","example":"例文"},{"word":"単語","meaning":"中文","example":"例文"},{"word":"単語","meaning":"中文","example":"例文"},{"word":"単語","meaning":"中文","example":"例文"},{"word":"単語","meaning":"中文","example":"例文"}],'
+              '{"category":"realestate","titleJp":"不動産ニュース","titleZh":"中文","summaryJp":"要約","summaryZh":"中文","source":"メディア",'
+              '"vocabulary":[{"word":"単語","reading":"読み","meaning":"中文","example":"例文"},{"word":"単語","reading":"読み","meaning":"中文","example":"例文"},{"word":"単語","reading":"読み","meaning":"中文","example":"例文"},{"word":"単語","reading":"読み","meaning":"中文","example":"例文"},{"word":"単語","reading":"読み","meaning":"中文","example":"例文"}],'
               '"grammarPoints":[{"pattern":"パターン","meaning":"中文","example":"例文","exampleZh":"翻譯"},{"pattern":"パターン","meaning":"中文","example":"例文","exampleZh":"翻譯"},{"pattern":"パターン","meaning":"中文","example":"例文","exampleZh":"翻譯"}],'
               '"keySentences":[{"jp":"文","zh":"翻譯","note":"解説"},{"jp":"文","zh":"翻譯","note":"解説"},{"jp":"文","zh":"翻譯","note":"解説"}]},'
-              '{"category":"economy","titleJp":"見出し","titleZh":"中文","summaryJp":"要約","summaryZh":"中文","source":"メディア",'
-              '"vocabulary":[{"word":"単語","meaning":"中文","example":"例文"},{"word":"単語","meaning":"中文","example":"例文"},{"word":"単語","meaning":"中文","example":"例文"},{"word":"単語","meaning":"中文","example":"例文"},{"word":"単語","meaning":"中文","example":"例文"}],'
+              '{"category":"economy","titleJp":"経済ニュース","titleZh":"中文","summaryJp":"要約","summaryZh":"中文","source":"メディア",'
+              '"vocabulary":[{"word":"単語","reading":"読み","meaning":"中文","example":"例文"},{"word":"単語","reading":"読み","meaning":"中文","example":"例文"},{"word":"単語","reading":"読み","meaning":"中文","example":"例文"},{"word":"単語","reading":"読み","meaning":"中文","example":"例文"},{"word":"単語","reading":"読み","meaning":"中文","example":"例文"}],'
               '"grammarPoints":[{"pattern":"パターン","meaning":"中文","example":"例文","exampleZh":"翻譯"},{"pattern":"パターン","meaning":"中文","example":"例文","exampleZh":"翻譯"},{"pattern":"パターン","meaning":"中文","example":"例文","exampleZh":"翻譯"}],'
               '"keySentences":[{"jp":"文","zh":"翻譯","note":"解説"},{"jp":"文","zh":"翻譯","note":"解説"},{"jp":"文","zh":"翻譯","note":"解説"}]},'
-              '{"category":"agri","titleJp":"見出し","titleZh":"中文","summaryJp":"要約","summaryZh":"中文","source":"メディア",'
-              '"vocabulary":[{"word":"単語","meaning":"中文","example":"例文"},{"word":"単語","meaning":"中文","example":"例文"},{"word":"単語","meaning":"中文","example":"例文"},{"word":"単語","meaning":"中文","example":"例文"},{"word":"単語","meaning":"中文","example":"例文"}],'
+              '{"category":"agri","titleJp":"農業ニュース","titleZh":"中文","summaryJp":"要約","summaryZh":"中文","source":"メディア",'
+              '"vocabulary":[{"word":"単語","reading":"読み","meaning":"中文","example":"例文"},{"word":"単語","reading":"読み","meaning":"中文","example":"例文"},{"word":"単語","reading":"読み","meaning":"中文","example":"例文"},{"word":"単語","reading":"読み","meaning":"中文","example":"例文"},{"word":"単語","reading":"読み","meaning":"中文","example":"例文"}],'
               '"grammarPoints":[{"pattern":"パターン","meaning":"中文","example":"例文","exampleZh":"翻譯"},{"pattern":"パターン","meaning":"中文","example":"例文","exampleZh":"翻譯"},{"pattern":"パターン","meaning":"中文","example":"例文","exampleZh":"翻譯"}],'
               '"keySentences":[{"jp":"文","zh":"翻譯","note":"解説"},{"jp":"文","zh":"翻譯","note":"解説"},{"jp":"文","zh":"翻譯","note":"解説"}]}'
               ']}'
@@ -77,7 +76,6 @@ jobs:
 
           print("API response received")
 
-          # Extract all text parts
           text = ""
           for part in data["candidates"][0]["content"]["parts"]:
               if "text" in part:
@@ -86,43 +84,42 @@ jobs:
           text = text.strip()
           print("Raw text length:", len(text))
 
-          # Clean markdown code blocks
+          # Clean markdown
           text = re.sub(r'```[a-z]*', '', text)
           text = text.replace('```', '').strip()
 
-          # Find JSON boundaries
+          # Find JSON
           start = text.index("{")
           end = text.rindex("}") + 1
           json_str = text[start:end]
 
-          # Fix control characters inside JSON string values
-          # Replace literal newlines inside strings with space
-          def fix_json_string(s):
-              result = []
-              in_string = False
-              escape = False
-              for ch in s:
-                  if escape:
-                      result.append(ch)
-                      escape = False
-                  elif ch == '\\':
-                      result.append(ch)
-                      escape = True
-                  elif ch == '"':
-                      result.append(ch)
-                      in_string = not in_string
-                  elif in_string and ch in ('\n', '\r', '\t'):
-                      result.append(' ')
-                  elif in_string and ord(ch) < 32:
-                      # skip other control characters
-                      pass
-                  else:
-                      result.append(ch)
-              return ''.join(result)
-
-          json_str = fix_json_string(json_str)
+          # Replace literal newlines/tabs inside strings with space
+          cleaned = []
+          in_str = False
+          esc = False
+          for ch in json_str:
+              if esc:
+                  cleaned.append(ch)
+                  esc = False
+              elif ch == '\\':
+                  cleaned.append(ch)
+                  esc = True
+              elif ch == '"':
+                  cleaned.append(ch)
+                  in_str = not in_str
+              elif in_str and ord(ch) < 32:
+                  cleaned.append(' ')
+              else:
+                  cleaned.append(ch)
+          json_str = ''.join(cleaned)
 
           parsed = json.loads(json_str)
+
+          # Add ruby tags from reading field
+          for article in parsed.get("articles", []):
+              for v in article.get("vocabulary", []):
+                  if v.get("word") and v.get("reading"):
+                      v["word"] = "<ruby>" + v["word"] + "<rt>" + v["reading"] + "</rt></ruby>"
 
           with open("today.json", "w", encoding="utf-8") as f:
               json.dump(parsed, f, ensure_ascii=False, indent=2)
