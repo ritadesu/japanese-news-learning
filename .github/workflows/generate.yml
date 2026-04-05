@@ -22,7 +22,7 @@ jobs:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: |
           python3 - << 'EOF'
-          import os, json, urllib.request, datetime
+          import os, json, urllib.request, datetime, re
 
           api_key = os.environ["GEMINI_API_KEY"]
           today = datetime.datetime.now(
@@ -34,49 +34,69 @@ jobs:
               "台湾人学習者向けのN2レベルの学習コンテンツを作成してください。"
               "すべての漢字にrubyタグで読み仮名を付けてください。"
               "例：<ruby>東京<rt>とうきょう</rt></ruby>\n\n"
-              "以下のJSON形式のみで回答してください（前置き・コードブロック不要）：\n"
+              "以下のJSON形式のみで回答してください。JSONのみ出力し、他のテキストは含めないでください：\n"
               '{"date":"' + today + '","articles":['
-              '{"category":"tech","titleJp":"見出し","titleZh":"中文","summaryJp":"要約","summaryZh":"中文","source":"メディア",'
+              '{"category":"tech","titleJp":"rubyタグ付き見出し","titleZh":"中文","summaryJp":"rubyタグ付き要約3文","summaryZh":"中文摘要","source":"メディア名",'
+              '"vocabulary":[{"word":"<ruby>単語<rt>読み</rt></ruby>","meaning":"中文意思","example":"例文"},{"word":"<ruby>単語<rt>読み</rt></ruby>","meaning":"中文意思","example":"例文"},{"word":"<ruby>単語<rt>読み</rt></ruby>","meaning":"中文意思","example":"例文"},{"word":"<ruby>単語<rt>読み</rt></ruby>","meaning":"中文意思","example":"例文"},{"word":"<ruby>単語<rt>読み</rt></ruby>","meaning":"中文意思","example":"例文"}],'
+              '"grammarPoints":[{"pattern":"〜パターン","meaning":"中文說明","example":"例文","exampleZh":"翻譯"},{"pattern":"〜パターン","meaning":"中文說明","example":"例文","exampleZh":"翻譯"},{"pattern":"〜パターン","meaning":"中文說明","example":"例文","exampleZh":"翻譯"}],'
+              '"keySentences":[{"jp":"文","zh":"翻譯","note":"解説"},{"jp":"文","zh":"翻譯","note":"解説"},{"jp":"文","zh":"翻譯","note":"解説"}]},'
+              '{"category":"urban","titleJp":"見出し","titleZh":"中文","summaryJp":"要約","summaryZh":"中文","source":"メディア",'
               '"vocabulary":[{"word":"単語","meaning":"中文","example":"例文"},{"word":"単語","meaning":"中文","example":"例文"},{"word":"単語","meaning":"中文","example":"例文"},{"word":"単語","meaning":"中文","example":"例文"},{"word":"単語","meaning":"中文","example":"例文"}],'
               '"grammarPoints":[{"pattern":"パターン","meaning":"中文","example":"例文","exampleZh":"翻譯"},{"pattern":"パターン","meaning":"中文","example":"例文","exampleZh":"翻譯"},{"pattern":"パターン","meaning":"中文","example":"例文","exampleZh":"翻譯"}],'
               '"keySentences":[{"jp":"文","zh":"翻譯","note":"解説"},{"jp":"文","zh":"翻譯","note":"解説"},{"jp":"文","zh":"翻譯","note":"解説"}]},'
-              '{"category":"urban","titleJp":"見出し","titleZh":"中文","summaryJp":"要約","summaryZh":"中文","source":"メディア",'
-              '"vocabulary":[{"word":"","meaning":"","example":""},{"word":"","meaning":"","example":""},{"word":"","meaning":"","example":""},{"word":"","meaning":"","example":""},{"word":"","meaning":"","example":""}],'
-              '"grammarPoints":[{"pattern":"","meaning":"","example":"","exampleZh":""},{"pattern":"","meaning":"","example":"","exampleZh":""},{"pattern":"","meaning":"","example":"","exampleZh":""}],'
-              '"keySentences":[{"jp":"","zh":"","note":""},{"jp":"","zh":"","note":""},{"jp":"","zh":"","note":""}]},'
               '{"category":"realestate","titleJp":"見出し","titleZh":"中文","summaryJp":"要約","summaryZh":"中文","source":"メディア",'
-              '"vocabulary":[{"word":"","meaning":"","example":""},{"word":"","meaning":"","example":""},{"word":"","meaning":"","example":""},{"word":"","meaning":"","example":""},{"word":"","meaning":"","example":""}],'
-              '"grammarPoints":[{"pattern":"","meaning":"","example":"","exampleZh":""},{"pattern":"","meaning":"","example":"","exampleZh":""},{"pattern":"","meaning":"","example":"","exampleZh":""}],'
-              '"keySentences":[{"jp":"","zh":"","note":""},{"jp":"","zh":"","note":""},{"jp":"","zh":"","note":""}]},'
+              '"vocabulary":[{"word":"単語","meaning":"中文","example":"例文"},{"word":"単語","meaning":"中文","example":"例文"},{"word":"単語","meaning":"中文","example":"例文"},{"word":"単語","meaning":"中文","example":"例文"},{"word":"単語","meaning":"中文","example":"例文"}],'
+              '"grammarPoints":[{"pattern":"パターン","meaning":"中文","example":"例文","exampleZh":"翻譯"},{"pattern":"パターン","meaning":"中文","example":"例文","exampleZh":"翻譯"},{"pattern":"パターン","meaning":"中文","example":"例文","exampleZh":"翻譯"}],'
+              '"keySentences":[{"jp":"文","zh":"翻譯","note":"解説"},{"jp":"文","zh":"翻譯","note":"解説"},{"jp":"文","zh":"翻譯","note":"解説"}]},'
               '{"category":"economy","titleJp":"見出し","titleZh":"中文","summaryJp":"要約","summaryZh":"中文","source":"メディア",'
-              '"vocabulary":[{"word":"","meaning":"","example":""},{"word":"","meaning":"","example":""},{"word":"","meaning":"","example":""},{"word":"","meaning":"","example":""},{"word":"","meaning":"","example":""}],'
-              '"grammarPoints":[{"pattern":"","meaning":"","example":"","exampleZh":""},{"pattern":"","meaning":"","example":"","exampleZh":""},{"pattern":"","meaning":"","example":"","exampleZh":""}],'
-              '"keySentences":[{"jp":"","zh":"","note":""},{"jp":"","zh":"","note":""},{"jp":"","zh":"","note":""}]},'
+              '"vocabulary":[{"word":"単語","meaning":"中文","example":"例文"},{"word":"単語","meaning":"中文","example":"例文"},{"word":"単語","meaning":"中文","example":"例文"},{"word":"単語","meaning":"中文","example":"例文"},{"word":"単語","meaning":"中文","example":"例文"}],'
+              '"grammarPoints":[{"pattern":"パターン","meaning":"中文","example":"例文","exampleZh":"翻譯"},{"pattern":"パターン","meaning":"中文","example":"例文","exampleZh":"翻譯"},{"pattern":"パターン","meaning":"中文","example":"例文","exampleZh":"翻譯"}],'
+              '"keySentences":[{"jp":"文","zh":"翻譯","note":"解説"},{"jp":"文","zh":"翻譯","note":"解説"},{"jp":"文","zh":"翻譯","note":"解説"}]},'
               '{"category":"agri","titleJp":"見出し","titleZh":"中文","summaryJp":"要約","summaryZh":"中文","source":"メディア",'
-              '"vocabulary":[{"word":"","meaning":"","example":""},{"word":"","meaning":"","example":""},{"word":"","meaning":"","example":""},{"word":"","meaning":"","example":""},{"word":"","meaning":"","example":""}],'
-              '"grammarPoints":[{"pattern":"","meaning":"","example":"","exampleZh":""},{"pattern":"","meaning":"","example":"","exampleZh":""},{"pattern":"","meaning":"","example":"","exampleZh":""}],'
-              '"keySentences":[{"jp":"","zh":"","note":""},{"jp":"","zh":"","note":""},{"jp":"","zh":"","note":""}]}'
-              ']}\n\n'
-              "全フィールドを実際のコンテンツで埋め、漢字にはrubyタグで読み仮名を付けてください。"
+              '"vocabulary":[{"word":"単語","meaning":"中文","example":"例文"},{"word":"単語","meaning":"中文","example":"例文"},{"word":"単語","meaning":"中文","example":"例文"},{"word":"単語","meaning":"中文","example":"例文"},{"word":"単語","meaning":"中文","example":"例文"}],'
+              '"grammarPoints":[{"pattern":"パターン","meaning":"中文","example":"例文","exampleZh":"翻譯"},{"pattern":"パターン","meaning":"中文","example":"例文","exampleZh":"翻譯"},{"pattern":"パターン","meaning":"中文","example":"例文","exampleZh":"翻譯"}],'
+              '"keySentences":[{"jp":"文","zh":"翻譯","note":"解説"},{"jp":"文","zh":"翻譯","note":"解説"},{"jp":"文","zh":"翻譯","note":"解説"}]}'
+              ']}'
           )
 
           payload = json.dumps({
               "contents": [{"parts": [{"text": prompt}], "role": "user"}],
               "tools": [{"google_search": {}}],
-              "generationConfig": {"maxOutputTokens": 8192}
+              "generationConfig": {
+                  "maxOutputTokens": 8192,
+                  "temperature": 0.5
+              }
           }).encode("utf-8")
 
           url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=" + api_key
           req = urllib.request.Request(url, data=payload, headers={"Content-Type": "application/json"})
 
-          with urllib.request.urlopen(req, timeout=120) as res:
+          with urllib.request.urlopen(req, timeout=180) as res:
               data = json.loads(res.read())
 
-          text = data["candidates"][0]["content"]["parts"][0]["text"].strip()
-          text = text.replace("```json", "").replace("```", "").strip()
+          print("API response received")
+
+          # Extract all text parts
+          text = ""
+          for part in data["candidates"][0]["content"]["parts"]:
+              if "text" in part:
+                  text += part["text"]
+
+          text = text.strip()
+          print("Raw text length:", len(text))
+          print("First 200 chars:", text[:200])
+
+          # Clean markdown code blocks
+          text = re.sub(r'^```[a-z]*\n?', '', text, flags=re.MULTILINE)
+          text = re.sub(r'\n?```', '', text)
+          text = text.strip()
+
+          # Find JSON
           start = text.index("{")
           end = text.rindex("}") + 1
-          parsed = json.loads(text[start:end])
+          json_str = text[start:end]
+
+          parsed = json.loads(json_str)
 
           with open("today.json", "w", encoding="utf-8") as f:
               json.dump(parsed, f, ensure_ascii=False, indent=2)
