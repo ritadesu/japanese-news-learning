@@ -21,110 +21,130 @@ jobs:
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: |
-          python3 - << 'EOF'
-          import os, json, urllib.request, datetime, re
+          node << 'EOF'
+          const https = require('https');
+          const fs = require('fs');
 
-          api_key = os.environ["GEMINI_API_KEY"]
-          today = datetime.datetime.now(
-              datetime.timezone(datetime.timedelta(hours=8))
-          ).strftime("%Y年%m月%d日")
+          const apiKey = process.env.GEMINI_API_KEY;
+          const now = new Date(Date.now() + 8 * 60 * 60 * 1000);
+          const today = now.getFullYear() + '年' +
+            String(now.getMonth() + 1).padStart(2, '0') + '月' +
+            String(now.getDate()).padStart(2, '0') + '日';
 
-          prompt = (
-              "あなたは日本語教育の専門家です。今日（" + today + "）の日本の最新ニュースを基に、"
-              "台湾人学習者向けのN2レベルの学習コンテンツを5カテゴリ分作成してください。\n\n"
-              "【重要】JSONの文字列の中にHTMLタグ・改行・特殊文字を含めないでください。プレーンテキストのみ使用してください。\n"
-              "漢字の読み方は「word_reading」フィールドに別途記載してください。\n\n"
-              "JSONのみ出力してください（コードブロック・説明文不要）：\n"
-              '{"date":"' + today + '","articles":['
-              '{"category":"tech","titleJp":"テクノロジーニュース見出し","titleZh":"中文翻譯","summaryJp":"3文の要約。漢字の後ろに括弧で読みを入れてください。例：東京（とうきょう）","summaryZh":"中文摘要","source":"メディア名",'
-              '"vocabulary":[{"word":"単語","reading":"読み方","meaning":"中文意思","example":"例文（読み付き）"},{"word":"単語","reading":"読み方","meaning":"中文意思","example":"例文"},{"word":"単語","reading":"読み方","meaning":"中文意思","example":"例文"},{"word":"単語","reading":"読み方","meaning":"中文意思","example":"例文"},{"word":"単語","reading":"読み方","meaning":"中文意思","example":"例文"}],'
-              '"grammarPoints":[{"pattern":"パターン","meaning":"中文說明","example":"例文（読み付き）","exampleZh":"翻譯"},{"pattern":"パターン","meaning":"中文說明","example":"例文","exampleZh":"翻譯"},{"pattern":"パターン","meaning":"中文說明","example":"例文","exampleZh":"翻譯"}],'
-              '"keySentences":[{"jp":"文（読み付き）","zh":"翻譯","note":"解説"},{"jp":"文","zh":"翻譯","note":"解説"},{"jp":"文","zh":"翻譯","note":"解説"}]},'
-              '{"category":"urban","titleJp":"都市更新ニュース","titleZh":"中文","summaryJp":"要約","summaryZh":"中文","source":"メディア",'
-              '"vocabulary":[{"word":"単語","reading":"読み","meaning":"中文","example":"例文"},{"word":"単語","reading":"読み","meaning":"中文","example":"例文"},{"word":"単語","reading":"読み","meaning":"中文","example":"例文"},{"word":"単語","reading":"読み","meaning":"中文","example":"例文"},{"word":"単語","reading":"読み","meaning":"中文","example":"例文"}],'
-              '"grammarPoints":[{"pattern":"パターン","meaning":"中文","example":"例文","exampleZh":"翻譯"},{"pattern":"パターン","meaning":"中文","example":"例文","exampleZh":"翻譯"},{"pattern":"パターン","meaning":"中文","example":"例文","exampleZh":"翻譯"}],'
-              '"keySentences":[{"jp":"文","zh":"翻譯","note":"解説"},{"jp":"文","zh":"翻譯","note":"解説"},{"jp":"文","zh":"翻譯","note":"解説"}]},'
-              '{"category":"realestate","titleJp":"不動産ニュース","titleZh":"中文","summaryJp":"要約","summaryZh":"中文","source":"メディア",'
-              '"vocabulary":[{"word":"単語","reading":"読み","meaning":"中文","example":"例文"},{"word":"単語","reading":"読み","meaning":"中文","example":"例文"},{"word":"単語","reading":"読み","meaning":"中文","example":"例文"},{"word":"単語","reading":"読み","meaning":"中文","example":"例文"},{"word":"単語","reading":"読み","meaning":"中文","example":"例文"}],'
-              '"grammarPoints":[{"pattern":"パターン","meaning":"中文","example":"例文","exampleZh":"翻譯"},{"pattern":"パターン","meaning":"中文","example":"例文","exampleZh":"翻譯"},{"pattern":"パターン","meaning":"中文","example":"例文","exampleZh":"翻譯"}],'
-              '"keySentences":[{"jp":"文","zh":"翻譯","note":"解説"},{"jp":"文","zh":"翻譯","note":"解説"},{"jp":"文","zh":"翻譯","note":"解説"}]},'
-              '{"category":"economy","titleJp":"経済ニュース","titleZh":"中文","summaryJp":"要約","summaryZh":"中文","source":"メディア",'
-              '"vocabulary":[{"word":"単語","reading":"読み","meaning":"中文","example":"例文"},{"word":"単語","reading":"読み","meaning":"中文","example":"例文"},{"word":"単語","reading":"読み","meaning":"中文","example":"例文"},{"word":"単語","reading":"読み","meaning":"中文","example":"例文"},{"word":"単語","reading":"読み","meaning":"中文","example":"例文"}],'
-              '"grammarPoints":[{"pattern":"パターン","meaning":"中文","example":"例文","exampleZh":"翻譯"},{"pattern":"パターン","meaning":"中文","example":"例文","exampleZh":"翻譯"},{"pattern":"パターン","meaning":"中文","example":"例文","exampleZh":"翻譯"}],'
-              '"keySentences":[{"jp":"文","zh":"翻譯","note":"解説"},{"jp":"文","zh":"翻譯","note":"解説"},{"jp":"文","zh":"翻譯","note":"解説"}]},'
-              '{"category":"agri","titleJp":"農業ニュース","titleZh":"中文","summaryJp":"要約","summaryZh":"中文","source":"メディア",'
-              '"vocabulary":[{"word":"単語","reading":"読み","meaning":"中文","example":"例文"},{"word":"単語","reading":"読み","meaning":"中文","example":"例文"},{"word":"単語","reading":"読み","meaning":"中文","example":"例文"},{"word":"単語","reading":"読み","meaning":"中文","example":"例文"},{"word":"単語","reading":"読み","meaning":"中文","example":"例文"}],'
-              '"grammarPoints":[{"pattern":"パターン","meaning":"中文","example":"例文","exampleZh":"翻譯"},{"pattern":"パターン","meaning":"中文","example":"例文","exampleZh":"翻譯"},{"pattern":"パターン","meaning":"中文","example":"例文","exampleZh":"翻譯"}],'
-              '"keySentences":[{"jp":"文","zh":"翻譯","note":"解説"},{"jp":"文","zh":"翻譯","note":"解説"},{"jp":"文","zh":"翻譯","note":"解説"}]}'
-              ']}'
-          )
+          const categories = [
+            { id: 'tech', name: 'テクノロジー' },
+            { id: 'urban', name: '都市更新' },
+            { id: 'realestate', name: '不動産市場' },
+            { id: 'economy', name: '経済' },
+            { id: 'agri', name: '農業' }
+          ];
 
-          payload = json.dumps({
-              "contents": [{"parts": [{"text": prompt}], "role": "user"}],
-              "tools": [{"google_search": {}}],
-              "generationConfig": {
-                  "maxOutputTokens": 8192,
-                  "temperature": 0.3
+          async function callGemini(prompt) {
+            return new Promise((resolve, reject) => {
+              const body = JSON.stringify({
+                contents: [{ parts: [{ text: prompt }], role: 'user' }],
+                tools: [{ google_search: {} }],
+                generationConfig: { maxOutputTokens: 2048, temperature: 0.3 }
+              });
+
+              const options = {
+                hostname: 'generativelanguage.googleapis.com',
+                path: '/v1beta/models/gemini-2.5-flash:generateContent?key=' + apiKey,
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body) }
+              };
+
+              const req = https.request(options, (res) => {
+                let data = '';
+                res.on('data', chunk => data += chunk);
+                res.on('end', () => {
+                  try {
+                    const parsed = JSON.parse(data);
+                    let text = '';
+                    for (const part of parsed.candidates[0].content.parts) {
+                      if (part.text) text += part.text;
+                    }
+                    resolve(text.trim());
+                  } catch(e) {
+                    reject(new Error('Parse error: ' + e.message + '\nRaw: ' + data.slice(0, 200)));
+                  }
+                });
+              });
+              req.on('error', reject);
+              req.setTimeout(120000, () => { req.destroy(); reject(new Error('Timeout')); });
+              req.write(body);
+              req.end();
+            });
+          }
+
+          async function generateArticle(cat) {
+            const prompt = `今日（${today}）の日本の${cat.name}に関する最新ニュースを1件選び、台湾人日本語学習者向けN2レベルの学習コンテンツを作成してください。
+
+必ずJSON形式のみで回答してください。文字列の中に改行や制御文字を含めないでください。
+
+{"category":"${cat.id}","titleJp":"見出し（括弧で読みを付ける：東京（とうきょう））","titleZh":"中文翻譯","summaryJp":"要約（括弧で読みを付ける）","summaryZh":"中文摘要","source":"メディア名","vocabulary":[{"word":"単語1","reading":"読み1","meaning":"中文意思1","example":"例文1（括弧で読み付き）"},{"word":"単語2","reading":"読み2","meaning":"中文意思2","example":"例文2"},{"word":"単語3","reading":"読み3","meaning":"中文意思3","example":"例文3"},{"word":"単語4","reading":"読み4","meaning":"中文意思4","example":"例文4"},{"word":"単語5","reading":"読み5","meaning":"中文意思5","example":"例文5"}],"grammarPoints":[{"pattern":"〜パターン1","meaning":"中文說明1","example":"例文1","exampleZh":"翻譯1"},{"pattern":"〜パターン2","meaning":"中文說明2","example":"例文2","exampleZh":"翻譯2"},{"pattern":"〜パターン3","meaning":"中文說明3","example":"例文3","exampleZh":"翻譯3"}],"keySentences":[{"jp":"文1（括弧で読み付き）","zh":"翻譯1","note":"解説1"},{"jp":"文2","zh":"翻譯2","note":"解説2"},{"jp":"文3","zh":"翻譯3","note":"解説3"}]}`;
+
+            const text = await callGemini(prompt);
+            console.log('Got response for', cat.id, 'length:', text.length);
+
+            // Extract JSON
+            const start = text.indexOf('{');
+            const end = text.lastIndexOf('}') + 1;
+            if (start === -1 || end === 0) throw new Error('No JSON found for ' + cat.id);
+
+            let jsonStr = text.slice(start, end);
+
+            // Fix control characters
+            jsonStr = jsonStr.replace(/[\x00-\x1F\x7F]/g, (ch) => {
+              if (ch === '\n' || ch === '\r' || ch === '\t') return ' ';
+              return '';
+            });
+
+            const article = JSON.parse(jsonStr);
+
+            // Add ruby tags from reading field
+            if (article.vocabulary) {
+              for (const v of article.vocabulary) {
+                if (v.word && v.reading) {
+                  v.word = `<ruby>${v.word}<rt>${v.reading}</rt></ruby>`;
+                }
               }
-          }).encode("utf-8")
+            }
 
-          url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=" + api_key
-          req = urllib.request.Request(url, data=payload, headers={"Content-Type": "application/json"})
+            return article;
+          }
 
-          with urllib.request.urlopen(req, timeout=180) as res:
-              data = json.loads(res.read())
+          async function main() {
+            const articles = [];
+            for (const cat of categories) {
+              console.log('Generating:', cat.name);
+              try {
+                const article = await generateArticle(cat);
+                articles.push(article);
+                console.log('Done:', cat.id);
+              } catch(e) {
+                console.error('Error for', cat.id, e.message);
+                // Add placeholder on error so app still works
+                articles.push({
+                  category: cat.id,
+                  titleJp: cat.name + 'ニュース（生成エラー）',
+                  titleZh: '生成失敗',
+                  summaryJp: 'コンテンツの生成に失敗しました。',
+                  summaryZh: '內容生成失敗，請稍後再試。',
+                  source: '',
+                  vocabulary: [],
+                  grammarPoints: [],
+                  keySentences: []
+                });
+              }
+            }
 
-          print("API response received")
+            const output = { date: today, articles };
+            fs.writeFileSync('today.json', JSON.stringify(output, null, 2));
+            console.log('Saved today.json with', articles.length, 'articles');
+          }
 
-          text = ""
-          for part in data["candidates"][0]["content"]["parts"]:
-              if "text" in part:
-                  text += part["text"]
-
-          text = text.strip()
-          print("Raw text length:", len(text))
-
-          # Clean markdown
-          text = re.sub(r'```[a-z]*', '', text)
-          text = text.replace('```', '').strip()
-
-          # Find JSON
-          start = text.index("{")
-          end = text.rindex("}") + 1
-          json_str = text[start:end]
-
-          # Replace literal newlines/tabs inside strings with space
-          cleaned = []
-          in_str = False
-          esc = False
-          for ch in json_str:
-              if esc:
-                  cleaned.append(ch)
-                  esc = False
-              elif ch == '\\':
-                  cleaned.append(ch)
-                  esc = True
-              elif ch == '"':
-                  cleaned.append(ch)
-                  in_str = not in_str
-              elif in_str and ord(ch) < 32:
-                  cleaned.append(' ')
-              else:
-                  cleaned.append(ch)
-          json_str = ''.join(cleaned)
-
-          parsed = json.loads(json_str)
-
-          # Add ruby tags from reading field
-          for article in parsed.get("articles", []):
-              for v in article.get("vocabulary", []):
-                  if v.get("word") and v.get("reading"):
-                      v["word"] = "<ruby>" + v["word"] + "<rt>" + v["reading"] + "</rt></ruby>"
-
-          with open("today.json", "w", encoding="utf-8") as f:
-              json.dump(parsed, f, ensure_ascii=False, indent=2)
-
-          print("Done: " + str(len(parsed["articles"])) + " articles for " + today)
+          main().catch(e => { console.error(e); process.exit(1); });
           EOF
 
       - name: Commit and push today.json
