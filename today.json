@@ -1,0 +1,60 @@
+{
+  "date": "2026年04月05日",
+  "articles": [
+    {
+      "category": "tech",
+      "titleJp": "テクノロジー",
+      "titleZh": "生成失敗",
+      "summaryJp": "コンテンツの生成に失敗しました。",
+      "summaryZh": "內容生成失敗，請稍後再試。",
+      "source": "",
+      "vocabulary": [],
+      "grammarPoints": [],
+      "keySentences": []
+    },
+    {
+      "category": "urban",
+      "titleJp": "都市更新",
+      "titleZh": "生成失敗",
+      "summaryJp": "コンテンツの生成に失敗しました。",
+      "summaryZh": "內容生成失敗，請稍後再試。",
+      "source": "",
+      "vocabulary": [],
+      "grammarPoints": [],
+      "keySentences": []
+    },
+    {
+      "category": "realestate",
+      "titleJp": "不動産市場",
+      "titleZh": "生成失敗",
+      "summaryJp": "コンテンツの生成に失敗しました。",
+      "summaryZh": "內容生成失敗，請稍後再試。",
+      "source": "",
+      "vocabulary": [],
+      "grammarPoints": [],
+      "keySentences": []
+    },
+    {
+      "category": "economy",
+      "titleJp": "経済",
+      "titleZh": "生成失敗",
+      "summaryJp": "コンテンツの生成に失敗しました。",
+      "summaryZh": "內容生成失敗，請稍後再試。",
+      "source": "",
+      "vocabulary": [],
+      "grammarPoints": [],
+      "keySentences": []
+    },
+    {
+      "category": "agri",
+      "titleJp": "農業",
+      "titleZh": "生成失敗",
+      "summaryJp": "コンテンツの生成に失敗しました。",
+      "summaryZh": "內容生成失敗，請稍後再試。",
+      "source": "",
+      "vocabulary": [],
+      "grammarPoints": [],
+      "keySentences": []
+    }
+  ]
+}
