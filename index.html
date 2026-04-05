@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="JP学習">
-<meta name="theme-color" content="#1a1a18">
+<meta name="theme-color" content="#e8e4df">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-192.png">
 <title>日本語ニュースで学ぼう</title>
@@ -14,155 +14,252 @@
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500&display=swap" rel="stylesheet">
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* Morandi Pastel Color Palette */
 :root {
-  --bg0: #ffffff; --bg1: #f5f5f3; --bg2: #eeede9;
-  --t0: #1a1a18; --t1: #6b6b67; --t2: #9e9e99;
-  --b0: rgba(0,0,0,0.07); --b1: rgba(0,0,0,0.13); --b2: rgba(0,0,0,0.22);
-  --r1: 8px; --r2: 12px;
+  --bg-page:    #ede9e4;
+  --bg-card:    #f5f2ee;
+  --bg-surface: #eceae6;
+  --bg-subtle:  #e4e0db;
+
+  --text-primary:   #4a4540;
+  --text-secondary: #7a7470;
+  --text-tertiary:  #a09890;
+
+  --border-light:  rgba(120,110,100,0.10);
+  --border-medium: rgba(120,110,100,0.18);
+  --border-strong: rgba(120,110,100,0.30);
+
+  --accent-blue:    #8fa8b8;
+  --accent-sage:    #8fa89a;
+  --accent-rose:    #c4a89a;
+  --accent-lavender:#a89ab8;
+  --accent-amber:   #c4b48a;
+
+  --tab-active-bg:   #4a4540;
+  --tab-active-text: #f5f2ee;
+
+  --r1: 8px;
+  --r2: 14px;
+  --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
 }
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg0: #1c1c1a; --bg1: #252523; --bg2: #2e2e2b;
-    --t0: #f0efeb; --t1: #a0a09a; --t2: #6b6b65;
-    --b0: rgba(255,255,255,0.06); --b1: rgba(255,255,255,0.11); --b2: rgba(255,255,255,0.2);
-  }
-}
-body {
-  font-family: 'Noto Sans JP','Hiragino Sans',sans-serif;
-  background: var(--bg2); color: var(--t0);
-  min-height: 100dvh;
-  padding-bottom: calc(80px + var(--safe-bottom));
-}
-ruby { ruby-align: center; }
-rt { font-size: 0.55em; color: var(--t1); }
 
+body {
+  font-family: 'Noto Sans JP', 'Hiragino Sans', sans-serif;
+  background: var(--bg-page);
+  color: var(--text-primary);
+  min-height: 100dvh;
+  padding-bottom: calc(72px + var(--safe-bottom));
+}
+
+ruby { ruby-align: center; }
+rt { font-size: 0.5em; color: var(--accent-blue); font-weight: 500; }
+
+/* ── Topbar ── */
 .topbar {
   position: sticky; top: 0; z-index: 100;
-  background: var(--bg0); border-bottom: 0.5px solid var(--b0);
-  padding: 14px 16px 0;
+  background: var(--bg-card);
+  border-bottom: 1px solid var(--border-light);
+  padding: calc(14px + var(--safe-top)) 16px 0;
 }
-.topbar-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
-.app-title { font-size: 17px; font-weight: 500; }
+.topbar-row {
+  display: flex; align-items: center;
+  justify-content: space-between; margin-bottom: 14px;
+}
+.app-title {
+  font-size: 16px; font-weight: 500;
+  color: var(--text-primary); letter-spacing: 0.02em;
+}
 .topbar-actions { display: flex; gap: 8px; }
 .icon-btn {
   font-size: 12px; padding: 5px 12px; border-radius: 99px;
-  border: 0.5px solid var(--b1); background: transparent;
-  color: var(--t1); cursor: pointer; font-family: inherit; white-space: nowrap;
+  border: 1px solid var(--border-medium);
+  background: transparent; color: var(--text-secondary);
+  cursor: pointer; font-family: inherit; transition: all 0.15s;
 }
-.icon-btn.on { background: var(--t0); color: var(--bg0); border-color: var(--t0); }
+.icon-btn.on {
+  background: var(--tab-active-bg);
+  color: var(--tab-active-text);
+  border-color: var(--tab-active-bg);
+}
 
-.tabs-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; padding-bottom: 12px; }
+/* ── Tabs ── */
+.tabs-wrap {
+  overflow-x: auto; -webkit-overflow-scrolling: touch;
+  scrollbar-width: none; padding-bottom: 12px;
+}
 .tabs-wrap::-webkit-scrollbar { display: none; }
 .tabs { display: flex; gap: 6px; width: max-content; }
 .tab-btn {
   padding: 6px 14px; border-radius: 99px;
-  border: 0.5px solid var(--b1); background: transparent;
-  font-size: 12px; font-weight: 500; color: var(--t1);
-  cursor: pointer; font-family: inherit; white-space: nowrap; transition: all 0.15s;
+  border: 1px solid var(--border-medium);
+  background: transparent; font-size: 12px; font-weight: 500;
+  color: var(--text-secondary); cursor: pointer;
+  font-family: inherit; white-space: nowrap; transition: all 0.15s;
 }
-.tab-btn.active { background: var(--t0); color: var(--bg0); border-color: var(--t0); }
+.tab-btn.active {
+  background: var(--tab-active-bg);
+  color: var(--tab-active-text);
+  border-color: var(--tab-active-bg);
+}
+.tab-btn:hover:not(.active) { background: var(--bg-subtle); }
 
+/* ── Main ── */
 .main { padding: 16px; max-width: 700px; margin: 0 auto; }
 
+/* ── Generate button ── */
 .gen-btn {
-  width: 100%; padding: 14px; border-radius: var(--r2);
-  border: 0.5px solid var(--b1); background: var(--bg0);
-  font-size: 14px; font-weight: 500; color: var(--t0);
-  cursor: pointer; font-family: inherit; margin-bottom: 16px; transition: all 0.15s;
+  width: 100%; padding: 13px;
+  border-radius: var(--r2);
+  border: 1px solid var(--border-medium);
+  background: var(--bg-card);
+  font-size: 14px; font-weight: 500;
+  color: var(--text-primary);
+  cursor: pointer; font-family: inherit;
+  margin-bottom: 12px; transition: all 0.15s;
+  letter-spacing: 0.02em;
 }
-.gen-btn:active { transform: scale(0.98); }
-.gen-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.gen-btn:active { transform: scale(0.99); background: var(--bg-subtle); }
+.gen-btn:disabled { opacity: 0.45; cursor: not-allowed; }
 
+/* ── Status bar ── */
 .status-bar {
-  font-size: 12px; color: var(--t2); text-align: center;
-  padding: 8px; margin-bottom: 12px; display: none;
-  background: var(--bg1); border-radius: var(--r1);
+  font-size: 12px; color: var(--text-secondary);
+  text-align: center; padding: 9px 12px;
+  margin-bottom: 12px; background: var(--bg-surface);
+  border-radius: var(--r1); border: 1px solid var(--border-light);
+  display: none; line-height: 1.5;
 }
 .status-bar.visible { display: block; }
 
-.news-card { background: var(--bg0); border: 0.5px solid var(--b0); border-radius: var(--r2); margin-bottom: 14px; overflow: hidden; }
-.card-header { padding: 14px 16px 12px; border-bottom: 0.5px solid var(--b0); }
-.badge-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
-.badge { font-size: 11px; font-weight: 500; padding: 3px 10px; border-radius: 99px; white-space: nowrap; }
-.badge-tech       { background: #E6F1FB; color: #0C447C; }
-.badge-urban      { background: #FAEEDA; color: #633806; }
-.badge-realestate { background: #EAF3DE; color: #27500A; }
-.badge-economy    { background: #EEEDFE; color: #3C3489; }
-.badge-agri       { background: #EAF3DE; color: #3B6D11; }
-@media (prefers-color-scheme: dark) {
-  .badge-tech       { background: #0C2A4A; color: #85B7EB; }
-  .badge-urban      { background: #412402; color: #FAC775; }
-  .badge-realestate { background: #1A2E0D; color: #97C459; }
-  .badge-economy    { background: #26215C; color: #AFA9EC; }
-  .badge-agri       { background: #173404; color: #97C459; }
+/* ── News card ── */
+.news-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-light);
+  border-radius: var(--r2); margin-bottom: 14px; overflow: hidden;
 }
-.card-title { font-size: 15px; font-weight: 500; line-height: 1.6; }
-.card-meta { font-size: 12px; color: var(--t2); margin-top: 4px; }
+.card-header { padding: 14px 16px 12px; border-bottom: 1px solid var(--border-light); }
+.badge-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.badge {
+  font-size: 11px; font-weight: 500;
+  padding: 3px 10px; border-radius: 99px; white-space: nowrap;
+}
+.badge-tech       { background: #dde8f0; color: #5a7a90; }
+.badge-urban      { background: #e8ead8; color: #6a7a50; }
+.badge-realestate { background: #f0e8e0; color: #907060; }
+.badge-economy    { background: #e8e0f0; color: #706090; }
+.badge-agri       { background: #dceadc; color: #507050; }
+
+.card-title { font-size: 15px; font-weight: 500; line-height: 1.6; color: var(--text-primary); }
+.card-meta { font-size: 12px; color: var(--text-tertiary); margin-top: 5px; }
 .card-body { padding: 14px 16px; }
+
 .section-lbl {
-  font-size: 10px; font-weight: 500; letter-spacing: 0.08em;
-  text-transform: uppercase; color: var(--t2);
-  margin-top: 16px; margin-bottom: 8px;
+  font-size: 10px; font-weight: 500; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--text-tertiary);
+  margin-top: 18px; margin-bottom: 9px;
 }
 .section-lbl:first-child { margin-top: 0; }
-.summary { font-size: 14px; line-height: 1.9; }
-.summary-zh { font-size: 13px; line-height: 1.7; color: var(--t1); margin-top: 8px; padding-top: 8px; border-top: 0.5px solid var(--b0); }
 
+.summary { font-size: 14px; line-height: 1.9; color: var(--text-primary); }
+.summary-zh {
+  font-size: 13px; line-height: 1.7; color: var(--text-secondary);
+  margin-top: 9px; padding-top: 9px;
+  border-top: 1px solid var(--border-light);
+}
+
+/* ── Vocab grid ── */
 .vocab-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-@media (min-width: 500px) { .vocab-grid { grid-template-columns: repeat(3,1fr); } }
-.vocab-item { background: var(--bg1); border-radius: var(--r1); padding: 10px 12px; border: 0.5px solid var(--b0); }
-.vocab-word { font-size: 16px; font-weight: 500; }
-.vocab-meaning { font-size: 12px; color: var(--t1); margin-top: 4px; }
-.vocab-ex { font-size: 11px; color: var(--t2); margin-top: 4px; line-height: 1.6; }
+@media (min-width: 500px) { .vocab-grid { grid-template-columns: repeat(3, 1fr); } }
 
-.grammar-item { border-left: 2px solid var(--b2); padding: 9px 12px; margin-bottom: 8px; background: var(--bg1); border-radius: 0 var(--r1) var(--r1) 0; }
+.vocab-item {
+  background: var(--bg-surface); border-radius: var(--r1);
+  padding: 10px 12px; border: 1px solid var(--border-light);
+}
+.vocab-word { font-size: 16px; font-weight: 500; color: var(--text-primary); }
+.vocab-meaning { font-size: 12px; color: var(--text-secondary); margin-top: 4px; }
+.vocab-ex { font-size: 11px; color: var(--text-tertiary); margin-top: 4px; line-height: 1.6; }
+
+/* ── Grammar ── */
+.grammar-item {
+  border-left: 2px solid var(--accent-blue);
+  padding: 9px 12px; margin-bottom: 8px;
+  background: var(--bg-surface);
+  border-radius: 0 var(--r1) var(--r1) 0;
+}
 .grammar-item:last-child { margin-bottom: 0; }
-.grammar-pat { font-size: 14px; font-weight: 500; }
-.grammar-meaning { font-size: 12px; color: var(--t1); margin-top: 2px; }
-.grammar-ex { font-size: 13px; margin-top: 6px; line-height: 1.8; }
-.grammar-ex-zh { font-size: 12px; color: var(--t2); margin-top: 2px; }
+.grammar-pat { font-size: 14px; font-weight: 500; color: var(--text-primary); }
+.grammar-meaning { font-size: 12px; color: var(--text-secondary); margin-top: 2px; }
+.grammar-ex { font-size: 13px; color: var(--text-primary); margin-top: 6px; line-height: 1.8; }
+.grammar-ex-zh { font-size: 12px; color: var(--text-tertiary); margin-top: 2px; }
 
-.sent-item { padding-bottom: 12px; margin-bottom: 12px; border-bottom: 0.5px solid var(--b0); }
+/* ── Key sentences ── */
+.sent-item {
+  padding-bottom: 13px; margin-bottom: 13px;
+  border-bottom: 1px solid var(--border-light);
+}
 .sent-item:last-child { border-bottom: none; padding-bottom: 0; margin-bottom: 0; }
-.sent-jp { font-size: 14px; line-height: 1.9; }
-.sent-zh { font-size: 13px; color: var(--t1); margin-top: 4px; }
-.sent-note { font-size: 12px; color: var(--t2); margin-top: 5px; background: var(--bg1); padding: 6px 10px; border-radius: var(--r1); }
+.sent-jp { font-size: 14px; line-height: 1.9; color: var(--text-primary); }
+.sent-zh { font-size: 13px; color: var(--text-secondary); margin-top: 4px; }
+.sent-note {
+  font-size: 12px; color: var(--text-tertiary); margin-top: 5px;
+  background: var(--bg-surface); padding: 6px 10px; border-radius: var(--r1);
+}
 
-.empty-state, .loading-state {
+/* ── States ── */
+.empty-state {
   text-align: center; padding: 4rem 1rem;
-  background: var(--bg0); border-radius: var(--r2);
-  border: 0.5px dashed var(--b1); color: var(--t1); font-size: 14px;
+  background: var(--bg-card); border-radius: var(--r2);
+  border: 1px dashed var(--border-medium);
+  color: var(--text-secondary); font-size: 14px;
 }
 .empty-icon { font-size: 32px; margin-bottom: 12px; }
-.spinner { width: 22px; height: 22px; border: 2px solid var(--b1); border-top-color: var(--t1); border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 14px; }
-@keyframes spin { to { transform: rotate(360deg); } }
-.error-state { padding: 16px; background: var(--bg0); border: 0.5px solid var(--b0); border-radius: var(--r2); color: var(--t1); font-size: 13px; line-height: 1.6; }
-.date-row { text-align: right; font-size: 12px; color: var(--t2); margin-bottom: 10px; }
+.date-row { text-align: right; font-size: 12px; color: var(--text-tertiary); margin-bottom: 10px; }
 
-/* Modals */
-.modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 200; align-items: flex-end; justify-content: center; }
+/* ── Modal ── */
+.modal-overlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(74,69,64,0.4); z-index: 200;
+  align-items: flex-end; justify-content: center;
+}
 .modal-overlay.open { display: flex; }
-.modal { background: var(--bg0); border-radius: var(--r2) var(--r2) 0 0; padding: 24px 20px calc(24px + var(--safe-bottom)); width: 100%; max-width: 500px; }
-.modal h3 { font-size: 16px; font-weight: 500; margin-bottom: 6px; }
-.modal p { font-size: 13px; color: var(--t1); margin-bottom: 16px; line-height: 1.6; }
-.modal-field { margin-bottom: 16px; }
-.modal-field label { display: block; font-size: 12px; color: var(--t2); margin-bottom: 6px; }
+.modal {
+  background: var(--bg-card);
+  border-radius: var(--r2) var(--r2) 0 0;
+  padding: 24px 20px calc(24px + var(--safe-bottom));
+  width: 100%; max-width: 500px;
+}
+.modal h3 { font-size: 16px; font-weight: 500; margin-bottom: 6px; color: var(--text-primary); }
+.modal p { font-size: 13px; color: var(--text-secondary); margin-bottom: 16px; line-height: 1.6; }
+.modal-field { margin-bottom: 14px; }
+.modal-field label { display: block; font-size: 12px; color: var(--text-tertiary); margin-bottom: 5px; }
 .modal-field input {
   width: 100%; padding: 10px 12px; border-radius: var(--r1);
-  border: 0.5px solid var(--b1); background: var(--bg1);
-  color: var(--t0); font-size: 14px; font-family: inherit;
+  border: 1px solid var(--border-medium);
+  background: var(--bg-surface); color: var(--text-primary);
+  font-size: 14px; font-family: inherit;
 }
-.modal-btn { width: 100%; padding: 13px; border-radius: var(--r1); border: none; background: var(--t0); color: var(--bg0); font-size: 14px; font-weight: 500; cursor: pointer; font-family: inherit; margin-bottom: 8px; }
-.modal-cancel { width: 100%; padding: 11px; border-radius: var(--r1); border: 0.5px solid var(--b1); background: transparent; color: var(--t1); font-size: 14px; cursor: pointer; font-family: inherit; }
-.hint { font-size: 11px; color: var(--t2); margin-top: 4px; line-height: 1.5; }
+.hint { font-size: 11px; color: var(--text-tertiary); margin-top: 5px; line-height: 1.5; }
+.modal-btn {
+  width: 100%; padding: 13px; border-radius: var(--r1);
+  border: none; background: var(--tab-active-bg);
+  color: var(--tab-active-text); font-size: 14px; font-weight: 500;
+  cursor: pointer; font-family: inherit; margin-bottom: 8px;
+}
+.modal-cancel {
+  width: 100%; padding: 11px; border-radius: var(--r1);
+  border: 1px solid var(--border-medium); background: transparent;
+  color: var(--text-secondary); font-size: 14px;
+  cursor: pointer; font-family: inherit;
+}
 </style>
 </head>
 <body>
 
 <div class="topbar">
   <div class="topbar-row">
-    <span class="app-title">日本語ニュースで学ぼう</span>
+    <span class="app-title">📰 日本語ニュースで学ぼう</span>
     <div class="topbar-actions">
       <button class="icon-btn" id="notifyBtn" onclick="openModal('notifyModal')">🔔 通知</button>
       <button class="icon-btn" id="settingsBtn" onclick="openModal('settingsModal')">⚙ 設定</button>
@@ -171,11 +268,11 @@ rt { font-size: 0.55em; color: var(--t1); }
   <div class="tabs-wrap">
     <div class="tabs">
       <button class="tab-btn active" onclick="switchTab('all')">すべて</button>
-      <button class="tab-btn" onclick="switchTab('tech')">💻 科技</button>
-      <button class="tab-btn" onclick="switchTab('urban')">🏗 都市更新</button>
-      <button class="tab-btn" onclick="switchTab('realestate')">🏢 不動産市場</button>
-      <button class="tab-btn" onclick="switchTab('economy')">📈 経済</button>
-      <button class="tab-btn" onclick="switchTab('agri')">🌾 農業</button>
+      <button class="tab-btn" onclick="switchTab('tech')">テクノロジー</button>
+      <button class="tab-btn" onclick="switchTab('urban')">都市再開発</button>
+      <button class="tab-btn" onclick="switchTab('realestate')">不動産市場</button>
+      <button class="tab-btn" onclick="switchTab('economy')">経済</button>
+      <button class="tab-btn" onclick="switchTab('agri')">農業</button>
     </div>
   </div>
 </div>
@@ -198,7 +295,7 @@ rt { font-size: 0.55em; color: var(--t1); }
     <p>設定した時刻に学習リマインダーをお知らせします。</p>
     <div class="modal-field">
       <label>通知時刻</label>
-      <input type="time" id="notifyTime" value="08:00">
+      <input type="time" id="notifyTime" value="07:50">
     </div>
     <button class="modal-btn" onclick="saveNotification()">通知を有効にする</button>
     <button class="modal-cancel" onclick="closeModal('notifyModal')">キャンセル</button>
@@ -219,9 +316,9 @@ rt { font-size: 0.55em; color: var(--t1); }
       <input type="text" id="ghRepo" placeholder="例：japanese-news-learning">
     </div>
     <div class="modal-field">
-      <label>GitHub Personal Access Token（PAT）</label>
+      <label>Personal Access Token</label>
       <input type="password" id="ghToken" placeholder="ghp_xxxxxxxxxxxx">
-      <div class="hint">Settings → Developer settings → Personal access tokens → Fine-grained tokens<br>権限：Actions: Read & Write</div>
+      <div class="hint">Settings → Developer settings → Personal access tokens → Tokens (classic)<br>権限：repo ＋ workflow にチェック</div>
     </div>
     <button class="modal-btn" onclick="saveSettings()">保存する</button>
     <button class="modal-cancel" onclick="closeModal('settingsModal')">キャンセル</button>
@@ -231,17 +328,16 @@ rt { font-size: 0.55em; color: var(--t1); }
 <script>
 const CATS = ['all','tech','urban','realestate','economy','agri'];
 const BADGE = {
-  tech:        ['badge-tech',        '💻 科技'],
-  urban:       ['badge-urban',       '🏗 都市更新'],
-  realestate:  ['badge-realestate',  '🏢 不動産市場'],
-  economy:     ['badge-economy',     '📈 経済'],
-  agri:        ['badge-agri',        '🌾 農業']
+  tech:        ['badge-tech',        'テクノロジー'],
+  urban:       ['badge-urban',       '都市再開発'],
+  realestate:  ['badge-realestate',  '不動産市場'],
+  economy:     ['badge-economy',     '経済'],
+  agri:        ['badge-agri',        '農業']
 };
 let currentTab = 'all';
 let generatedData = null;
 let pollTimer = null;
 
-// PWA Service Worker
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('/sw.js').then(reg => {
     const saved = localStorage.getItem('notifyTime');
@@ -252,7 +348,6 @@ if ('serviceWorker' in navigator) {
   });
 }
 
-// Load settings on start
 window.addEventListener('load', () => {
   const t = localStorage.getItem('notifyTime');
   if (t) {
@@ -266,9 +361,7 @@ window.addEventListener('load', () => {
   if (u) document.getElementById('ghUser').value = u;
   if (r) document.getElementById('ghRepo').value = r;
   if (tok) document.getElementById('ghToken').value = tok;
-  if (u && r) document.getElementById('settingsBtn').classList.add('on');
-
-  // Try to load today's existing JSON
+  if (u && r && tok) document.getElementById('settingsBtn').classList.add('on');
   loadExistingNews();
 });
 
@@ -281,10 +374,9 @@ async function loadExistingNews() {
       renderCards(data);
       document.getElementById('genBtn').textContent = '✦ 再度生成する（最新に更新）';
     }
-  } catch(e) { /* no json yet, that's fine */ }
+  } catch(e) {}
 }
 
-// Tab switching
 function switchTab(tab) {
   currentTab = tab;
   document.querySelectorAll('.tab-btn').forEach((btn, i) => {
@@ -293,17 +385,15 @@ function switchTab(tab) {
   if (generatedData) renderCards(generatedData);
 }
 
-// Modals
 function openModal(id) { document.getElementById(id).classList.add('open'); }
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }
 function closeIfOutside(e, id) { if (e.target === document.getElementById(id)) closeModal(id); }
 
-// Notification
 async function saveNotification() {
   const t = document.getElementById('notifyTime').value;
   if (!('Notification' in window)) { alert('このブラウザは通知をサポートしていません。'); return; }
   const perm = await Notification.requestPermission();
-  if (perm !== 'granted') { alert('通知が許可されませんでした。設定から許可してください。'); return; }
+  if (perm !== 'granted') { alert('通知が許可されませんでした。'); return; }
   localStorage.setItem('notifyTime', t);
   const [h, m] = t.split(':').map(Number);
   const reg = await navigator.serviceWorker.ready;
@@ -313,7 +403,6 @@ async function saveNotification() {
   closeModal('notifyModal');
 }
 
-// GitHub Settings
 function saveSettings() {
   const u = document.getElementById('ghUser').value.trim();
   const r = document.getElementById('ghRepo').value.trim();
@@ -325,45 +414,40 @@ function saveSettings() {
   document.getElementById('settingsBtn').classList.add('on');
   closeModal('settingsModal');
   showStatus('✅ 設定を保存しました');
+  setTimeout(hideStatus, 2500);
 }
 
-// Trigger GitHub Actions
 async function triggerGenerate() {
   const user = localStorage.getItem('ghUser');
   const repo = localStorage.getItem('ghRepo');
   const token = localStorage.getItem('ghToken');
-
-  if (!user || !repo || !token) {
-    openModal('settingsModal');
-    showStatus('⚙ 先に GitHub 設定を行ってください');
-    return;
-  }
+  if (!user || !repo || !token) { openModal('settingsModal'); showStatus('⚙ 先に GitHub 設定を行ってください'); return; }
 
   const btn = document.getElementById('genBtn');
   btn.disabled = true;
-  btn.textContent = '生成をリクエスト中...';
+  btn.textContent = 'リクエスト送信中...';
   showStatus('🔄 GitHub Actions にリクエストを送信しています...');
 
   try {
-    const res = await fetch(`https://api.github.com/repos/${user}/${repo}/dispatches`, {
+    const res = await fetch('https://api.github.com/repos/' + user + '/' + repo + '/dispatches', {
       method: 'POST',
       headers: {
         'Accept': 'application/vnd.github+json',
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
+        'Authorization': 'Bearer ' + token,
+        'Content-Type': 'application/json',
+        'X-GitHub-Api-Version': '2022-11-28'
       },
       body: JSON.stringify({ event_type: 'generate-news' })
     });
 
-    if (!res.ok) {
-      const err = await res.json();
-      throw new Error(err.message || 'GitHub API error');
+    if (res.status === 204) {
+      btn.textContent = '⏳ 生成中（約1分）...';
+      showStatus('✅ リクエスト完了！Gemini がニュースを生成中です...');
+      startPolling();
+    } else {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.message || 'GitHub API error (' + res.status + ')');
     }
-
-    btn.textContent = '⏳ 生成中（約30秒）...';
-    showStatus('✅ リクエスト完了！GitHub Actions が実行中です。自動的に更新されます...');
-    startPolling();
-
   } catch(e) {
     showStatus('❌ エラー：' + e.message);
     btn.disabled = false;
@@ -371,12 +455,10 @@ async function triggerGenerate() {
   }
 }
 
-// Poll for new today.json after triggering
 function startPolling() {
   let attempts = 0;
-  const maxAttempts = 20; // 約60秒
-  const currentDate = generatedData?.date;
-
+  const maxAttempts = 30;
+  const prevDate = generatedData?.date;
   clearInterval(pollTimer);
   pollTimer = setInterval(async () => {
     attempts++;
@@ -384,20 +466,18 @@ function startPolling() {
       const res = await fetch('today.json?t=' + Date.now());
       if (res.ok) {
         const data = await res.json();
-        // Check if it's actually new content
-        if (data.date !== currentDate || !currentDate) {
+        if (data.date !== prevDate || !prevDate) {
           clearInterval(pollTimer);
           generatedData = data;
           renderCards(data);
           document.getElementById('genBtn').disabled = false;
           document.getElementById('genBtn').textContent = '✦ 再度生成する（最新に更新）';
           showStatus('✅ 今日のニュースが更新されました！');
-          setTimeout(() => hideStatus(), 3000);
+          setTimeout(hideStatus, 3000);
           return;
         }
       }
     } catch(e) {}
-
     if (attempts >= maxAttempts) {
       clearInterval(pollTimer);
       document.getElementById('genBtn').disabled = false;
@@ -412,14 +492,11 @@ function showStatus(msg) {
   bar.textContent = msg;
   bar.classList.add('visible');
 }
-function hideStatus() {
-  document.getElementById('statusBar').classList.remove('visible');
-}
+function hideStatus() { document.getElementById('statusBar').classList.remove('visible'); }
 
-// Render
 function renderCards(data) {
   const output = document.getElementById('output');
-  const articles = data.articles.filter(a => currentTab === 'all' || a.category === currentTab);
+  const articles = (data.articles || []).filter(a => currentTab === 'all' || a.category === currentTab);
   if (!articles.length) {
     output.innerHTML = '<div class="empty-state"><div class="empty-icon">🔍</div><div>このカテゴリーには記事がありません</div></div>';
     return;
@@ -428,15 +505,46 @@ function renderCards(data) {
   for (const a of articles) {
     const [bc, bl] = BADGE[a.category] || ['badge-tech', a.category];
     const vocabHtml = (a.vocabulary||[]).map(v =>
-      '<div class="vocab-item"><div class="vocab-word">' + v.word + '</div><div class="vocab-meaning">' + v.meaning + '</div><div class="vocab-ex">例：' + v.example + '</div></div>'
+      '<div class="vocab-item">' +
+        '<div class="vocab-word">' + v.word + '</div>' +
+        '<div class="vocab-meaning">' + v.meaning + '</div>' +
+        '<div class="vocab-ex">例：' + v.example + '</div>' +
+      '</div>'
     ).join('');
     const gramHtml = (a.grammarPoints||[]).map(g =>
-      '<div class="grammar-item"><div class="grammar-pat">' + g.pattern + '</div><div class="grammar-meaning">' + g.meaning + '</div><div class="grammar-ex">→ ' + g.example + '</div><div class="grammar-ex-zh">' + g.exampleZh + '</div></div>'
+      '<div class="grammar-item">' +
+        '<div class="grammar-pat">' + g.pattern + '</div>' +
+        '<div class="grammar-meaning">' + g.meaning + '</div>' +
+        '<div class="grammar-ex">→ ' + g.example + '</div>' +
+        '<div class="grammar-ex-zh">' + g.exampleZh + '</div>' +
+      '</div>'
     ).join('');
     const sentHtml = (a.keySentences||[]).map(s =>
-      '<div class="sent-item"><div class="sent-jp">' + s.jp + '</div><div class="sent-zh">' + s.zh + '</div><div class="sent-note">📌 ' + s.note + '</div></div>'
+      '<div class="sent-item">' +
+        '<div class="sent-jp">' + s.jp + '</div>' +
+        '<div class="sent-zh">' + s.zh + '</div>' +
+        '<div class="sent-note">📌 ' + s.note + '</div>' +
+      '</div>'
     ).join('');
-    html += '<div class="news-card"><div class="card-header"><div class="badge-row"><span class="badge ' + bc + '">' + bl + '</span></div><div class="card-title">' + a.titleJp + '</div><div class="card-meta">' + a.titleZh + '・出典：' + a.source + '</div></div><div class="card-body"><div class="section-lbl">ニュース要約</div><div class="summary">' + a.summaryJp + '</div><div class="summary-zh">' + a.summaryZh + '</div><div class="section-lbl">重要単語（5語）</div><div class="vocab-grid">' + vocabHtml + '</div><div class="section-lbl">文法・表現ポイント</div>' + gramHtml + '<div class="section-lbl">キーセンテンス解説</div>' + sentHtml + '</div></div>';
+    html +=
+      '<div class="news-card">' +
+        '<div class="card-header">' +
+          '<div class="badge-row"><span class="badge ' + bc + '">' + bl + '</span></div>' +
+          '<div class="card-title">' + a.titleJp + '</div>' +
+          '<div class="card-meta">' + a.titleZh + '・出典：' + a.source + '</div>' +
+        '</div>' +
+        '<div class="card-body">' +
+          '<div class="section-lbl">ニュース要約</div>' +
+          '<div class="summary">' + a.summaryJp + '</div>' +
+          '<div class="summary-zh">' + a.summaryZh + '</div>' +
+          '<div class="section-lbl">重要単語</div>' +
+          '<div class="vocab-grid">' + vocabHtml + '</div>' +
+          '<div class="section-lbl">文法・表現</div>' +
+          gramHtml +
+          '<div class="section-lbl">キーセンテンス</div>' +
+          sentHtml +
+        '</div>' +
+      '</div>';
   }
   output.innerHTML = html;
 }
