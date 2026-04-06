@@ -12,14 +12,6 @@ const today = now.getFullYear() + '\u5e74' +
 
 console.log('Generating news for:', today);
 
-const categories = [
-  { id: 'tech',       name: '\u30c6\u30af\u30ce\u30ed\u30b8\u30fc',   nameZh: '\u79d1\u6280' },
-  { id: 'urban',      name: '\u90fd\u5e02\u518d\u958b\u767a',          nameZh: '\u90fd\u5e02\u518d\u958b\u767a' },
-  { id: 'realestate', name: '\u4e0d\u52d5\u7523\u5e02\u5834',          nameZh: '\u4e0d\u52d5\u7522\u5e02\u5834' },
-  { id: 'economy',    name: '\u7d4c\u6e08',                            nameZh: '\u7d93\u6fdf' },
-  { id: 'agri',       name: '\u8fb2\u696d',                            nameZh: '\u8fb2\u696d' }
-];
-
 function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
@@ -30,16 +22,11 @@ function httpRequest(options, body) {
       const chunks = [];
       res.on('data', chunk => chunks.push(chunk));
       res.on('end', () => {
-        try {
-          const raw = Buffer.concat(chunks).toString('utf8');
-          resolve({ status: res.statusCode, body: raw });
-        } catch(e) {
-          reject(e);
-        }
+        resolve({ status: res.statusCode, body: Buffer.concat(chunks).toString('utf8') });
       });
     });
     req.on('error', reject);
-    req.setTimeout(120000, () => { req.destroy(); reject(new Error('Timeout')); });
+    req.setTimeout(180000, () => { req.destroy(); reject(new Error('Timeout')); });
     if (body) req.write(body);
     req.end();
   });
@@ -50,7 +37,7 @@ function callGemini(prompt) {
     const body = JSON.stringify({
       contents: [{ parts: [{ text: prompt }], role: 'user' }],
       generationConfig: {
-        maxOutputTokens: 2048,
+        maxOutputTokens: 16000,
         temperature: 0.3,
         responseMimeType: 'application/json'
       }
@@ -70,12 +57,7 @@ function callGemini(prompt) {
       const res = await httpRequest(options, body);
       const parsed = JSON.parse(res.body);
       if (parsed.error) {
-        const msg = parsed.error.message || JSON.stringify(parsed.error);
-        let retryDelay = 60;
-        const match = msg.match(/retry in (\d+)/i);
-        if (match) retryDelay = parseInt(match[1]) + 5;
-        const err = new Error('API Error: ' + msg);
-        err.retryDelay = retryDelay;
+        const err = new Error('API Error: ' + (parsed.error.message || JSON.stringify(parsed.error)));
         reject(err);
         return;
       }
@@ -90,45 +72,105 @@ function callGemini(prompt) {
   });
 }
 
-function buildPrompt(catId, catName, catNameZh, today) {
+function buildPrompt(today) {
   return [
-    'You are a Japanese language education expert for Taiwanese learners.',
-    'Topic: ' + catName + ' (' + catNameZh + ') news as of ' + today,
+    'You are an expert Japanese language teacher specializing in business Japanese for Taiwanese professionals.',
+    'Today is ' + today + '.',
+    'Generate advanced Japanese learning content based on recent Japanese news for ALL 5 categories.',
     '',
-    'RULES:',
-    '- Output ONLY valid JSON. No extra text outside the JSON.',
+    'CONTENT REQUIREMENTS:',
+    '- summaryJp: Write a DETAILED 5-6 sentence summary (~500 Japanese characters). Use rich, formal written Japanese (書き言葉). Include specific facts, numbers, and context from the news.',
+    '- summaryZh: Detailed Traditional Chinese translation matching the Japanese summary.',
+    '- vocabulary: Choose N1-level or business Japanese words (ビジネス日本語). Words commonly used in newspapers, corporate settings, or formal documents. Avoid basic N2 words.',
+    '- grammarPoints: Use advanced N1 grammar patterns or formal written expressions (〜に際して、〜をもって、〜に基づき、〜を余儀なくされる etc.)',
+    '- keySentences: Pick complex sentences from the summary with advanced grammar worth studying.',
+    '- note in keySentences: Explain the grammar point and nuance in Traditional Chinese, give usage tips.',
+    '',
+    'STRICT FORMAT RULES:',
+    '- Output ONLY a single valid JSON object. No extra text before or after.',
     '- ALL Chinese must be Traditional Chinese (繁體中文), NOT Simplified.',
-    '- Japanese text: plain text only, NO furigana in parentheses, NO HTML tags.',
-    '- Only "reading" field contains hiragana.',
-    '- No newlines inside JSON string values.',
-    '- Keep all strings SHORT to avoid truncation.',
+    '- Japanese text: plain text only. NO furigana in parentheses like 東京（とうきょう）. NO HTML tags.',
+    '- Only the "reading" field in vocabulary items contains hiragana reading.',
+    '- No newlines or control characters inside any JSON string values.',
+    '- Strings must be on a single line each.',
     '',
-    'Output this JSON with real content:',
+    'Output this exact JSON with complete real content for all 5 categories:',
     '{',
-    '  "category": "' + catId + '",',
-    '  "titleJp": "Japanese headline",',
-    '  "titleZh": "繁體中文標題",',
-    '  "summaryJp": "2-sentence Japanese summary, plain text only",',
-    '  "summaryZh": "繁體中文摘要，2句",',
-    '  "source": "Media name",',
-    '  "vocabulary": [',
-    '    {"word":"漢字","reading":"よみ","meaning":"繁體意思","example":"短い例文"},',
-    '    {"word":"漢字","reading":"よみ","meaning":"繁體意思","example":"短い例文"},',
-    '    {"word":"漢字","reading":"よみ","meaning":"繁體意思","example":"短い例文"},',
-    '    {"word":"漢字","reading":"よみ","meaning":"繁體意思","example":"短い例文"},',
-    '    {"word":"漢字","reading":"よみ","meaning":"繁體意思","example":"短い例文"}',
-    '  ],',
-    '  "grammarPoints": [',
-    '    {"pattern":"〜文法","meaning":"繁體說明","example":"例文","exampleZh":"繁體翻譯"},',
-    '    {"pattern":"〜文法","meaning":"繁體說明","example":"例文","exampleZh":"繁體翻譯"},',
-    '    {"pattern":"〜文法","meaning":"繁體說明","example":"例文","exampleZh":"繁體翻譯"}',
-    '  ],',
-    '  "keySentences": [',
-    '    {"jp":"日本語文","zh":"繁體翻譯","note":"繁體解說"},',
-    '    {"jp":"日本語文","zh":"繁體翻譯","note":"繁體解說"},',
-    '    {"jp":"日本語文","zh":"繁體翻譯","note":"繁體解說"}',
+    '  "date": "' + today + '",',
+    '  "articles": [',
+    '    {',
+    '      "category": "tech",',
+    '      "titleJp": "テクノロジーに関する実際のニュース見出し",',
+    '      "titleZh": "繁體中文標題",',
+    '      "summaryJp": "5〜6文の詳細な要約。約500文字。具体的な数字や背景情報を含む。書き言葉で書く。",',
+    '      "summaryZh": "與日文摘要對應的詳細繁體中文翻譯",',
+    '      "source": "日本経済新聞",',
+    '      "vocabulary": [',
+    '        {"word": "N1またはビジネス漢字語", "reading": "よみがな", "meaning": "繁體中文意思", "example": "ビジネスシーンでの例文"},',
+    '        {"word": "N1またはビジネス漢字語", "reading": "よみがな", "meaning": "繁體中文意思", "example": "例文"},',
+    '        {"word": "N1またはビジネス漢字語", "reading": "よみがな", "meaning": "繁體中文意思", "example": "例文"},',
+    '        {"word": "N1またはビジネス漢字語", "reading": "よみがな", "meaning": "繁體中文意思", "example": "例文"},',
+    '        {"word": "N1またはビジネス漢字語", "reading": "よみがな", "meaning": "繁體中文意思", "example": "例文"}',
+    '      ],',
+    '      "grammarPoints": [',
+    '        {"pattern": "〜N1文法パターン", "meaning": "繁體中文說明與使用場景", "example": "新聞・ビジネスシーンからの例文", "exampleZh": "繁體翻譯"},',
+    '        {"pattern": "〜N1文法パターン", "meaning": "繁體中文說明與使用場景", "example": "例文", "exampleZh": "繁體翻譯"},',
+    '        {"pattern": "〜N1文法パターン", "meaning": "繁體中文說明與使用場景", "example": "例文", "exampleZh": "繁體翻譯"}',
+    '      ],',
+    '      "keySentences": [',
+    '        {"jp": "要約から選んだ複雑な文", "zh": "繁體翻譯", "note": "詳細な文法解説と使用上のニュアンス（繁體中文）"},',
+    '        {"jp": "要約から選んだ複雑な文", "zh": "繁體翻譯", "note": "文法解説（繁體中文）"},',
+    '        {"jp": "要約から選んだ複雑な文", "zh": "繁體翻譯", "note": "文法解説（繁體中文）"}',
+    '      ]',
+    '    },',
+    '    {',
+    '      "category": "urban",',
+    '      "titleJp": "都市再開発に関する実際のニュース見出し",',
+    '      "titleZh": "繁體標題",',
+    '      "summaryJp": "5〜6文の詳細要約（約500文字）",',
+    '      "summaryZh": "繁體摘要",',
+    '      "source": "メディア名",',
+    '      "vocabulary": [{"word":"","reading":"","meaning":"","example":""},{"word":"","reading":"","meaning":"","example":""},{"word":"","reading":"","meaning":"","example":""},{"word":"","reading":"","meaning":"","example":""},{"word":"","reading":"","meaning":"","example":""}],',
+    '      "grammarPoints": [{"pattern":"","meaning":"","example":"","exampleZh":""},{"pattern":"","meaning":"","example":"","exampleZh":""},{"pattern":"","meaning":"","example":"","exampleZh":""}],',
+    '      "keySentences": [{"jp":"","zh":"","note":""},{"jp":"","zh":"","note":""},{"jp":"","zh":"","note":""}]',
+    '    },',
+    '    {',
+    '      "category": "realestate",',
+    '      "titleJp": "不動産市場に関する実際のニュース見出し",',
+    '      "titleZh": "繁體標題",',
+    '      "summaryJp": "5〜6文の詳細要約（約500文字）",',
+    '      "summaryZh": "繁體摘要",',
+    '      "source": "メディア名",',
+    '      "vocabulary": [{"word":"","reading":"","meaning":"","example":""},{"word":"","reading":"","meaning":"","example":""},{"word":"","reading":"","meaning":"","example":""},{"word":"","reading":"","meaning":"","example":""},{"word":"","reading":"","meaning":"","example":""}],',
+    '      "grammarPoints": [{"pattern":"","meaning":"","example":"","exampleZh":""},{"pattern":"","meaning":"","example":"","exampleZh":""},{"pattern":"","meaning":"","example":"","exampleZh":""}],',
+    '      "keySentences": [{"jp":"","zh":"","note":""},{"jp":"","zh":"","note":""},{"jp":"","zh":"","note":""}]',
+    '    },',
+    '    {',
+    '      "category": "economy",',
+    '      "titleJp": "経済に関する実際のニュース見出し",',
+    '      "titleZh": "繁體標題",',
+    '      "summaryJp": "5〜6文の詳細要約（約500文字）",',
+    '      "summaryZh": "繁體摘要",',
+    '      "source": "メディア名",',
+    '      "vocabulary": [{"word":"","reading":"","meaning":"","example":""},{"word":"","reading":"","meaning":"","example":""},{"word":"","reading":"","meaning":"","example":""},{"word":"","reading":"","meaning":"","example":""},{"word":"","reading":"","meaning":"","example":""}],',
+    '      "grammarPoints": [{"pattern":"","meaning":"","example":"","exampleZh":""},{"pattern":"","meaning":"","example":"","exampleZh":""},{"pattern":"","meaning":"","example":"","exampleZh":""}],',
+    '      "keySentences": [{"jp":"","zh":"","note":""},{"jp":"","zh":"","note":""},{"jp":"","zh":"","note":""}]',
+    '    },',
+    '    {',
+    '      "category": "agri",',
+    '      "titleJp": "農業に関する実際のニュース見出し",',
+    '      "titleZh": "繁體標題",',
+    '      "summaryJp": "5〜6文の詳細要約（約500文字）",',
+    '      "summaryZh": "繁體摘要",',
+    '      "source": "メディア名",',
+    '      "vocabulary": [{"word":"","reading":"","meaning":"","example":""},{"word":"","reading":"","meaning":"","example":""},{"word":"","reading":"","meaning":"","example":""},{"word":"","reading":"","meaning":"","example":""},{"word":"","reading":"","meaning":"","example":""}],',
+    '      "grammarPoints": [{"pattern":"","meaning":"","example":"","exampleZh":""},{"pattern":"","meaning":"","example":"","exampleZh":""},{"pattern":"","meaning":"","example":"","exampleZh":""}],',
+    '      "keySentences": [{"jp":"","zh":"","note":""},{"jp":"","zh":"","note":""},{"jp":"","zh":"","note":""}]',
+    '    }',
     '  ]',
-    '}'
+    '}',
+    '',
+    'IMPORTANT: Fill ALL fields in ALL 5 articles with complete, high-quality content. Every vocabulary word must be N1 or business level. Every summary must be detailed (~500 Japanese characters). Use Traditional Chinese only.'
   ].join('\n');
 }
 
@@ -136,7 +178,7 @@ function cleanJSON(text) {
   text = text.replace(/^```[a-z]*\n?/gm, '').replace(/\n?```/gm, '').trim();
   const start = text.indexOf('{');
   const end = text.lastIndexOf('}') + 1;
-  if (start === -1 || end === 0) throw new Error('No JSON found. Got: ' + text.slice(0, 150));
+  if (start === -1 || end === 0) throw new Error('No JSON found. Got: ' + text.slice(0, 200));
   let jsonStr = text.slice(start, end);
   let result = '';
   let inString = false;
@@ -159,50 +201,25 @@ function stripFurigana(text) {
   return text.replace(/（[ぁ-ん\u30A0-\u30FF]+）/g, '').replace(/\([ぁ-ん\u30A0-\u30FF]+\)/g, '').trim();
 }
 
-function cleanArticle(article) {
-  article.titleJp   = stripFurigana(article.titleJp || '');
-  article.summaryJp = stripFurigana(article.summaryJp || '');
-  if (article.grammarPoints) {
-    for (const g of article.grammarPoints) g.example = stripFurigana(g.example || '');
-  }
-  if (article.keySentences) {
-    for (const s of article.keySentences) s.jp = stripFurigana(s.jp || '');
-  }
-  if (article.vocabulary) {
-    for (const v of article.vocabulary) {
-      v.example = stripFurigana(v.example || '');
-      if (v.word && v.reading) {
-        v.word = '<ruby>' + v.word + '<rt>' + v.reading + '</rt></ruby>';
+function cleanArticles(articles) {
+  for (const a of articles) {
+    a.titleJp   = stripFurigana(a.titleJp || '');
+    a.summaryJp = stripFurigana(a.summaryJp || '');
+    if (a.grammarPoints) for (const g of a.grammarPoints) g.example = stripFurigana(g.example || '');
+    if (a.keySentences)  for (const s of a.keySentences)  s.jp = stripFurigana(s.jp || '');
+    if (a.vocabulary) {
+      for (const v of a.vocabulary) {
+        v.example = stripFurigana(v.example || '');
+        if (v.word && v.reading) {
+          v.word = '<ruby>' + v.word + '<rt>' + v.reading + '</rt></ruby>';
+        }
       }
     }
   }
-  return article;
+  return articles;
 }
 
-async function generateArticleWithRetry(cat, maxRetries = 3) {
-  for (let attempt = 1; attempt <= maxRetries; attempt++) {
-    try {
-      console.log('  Attempt ' + attempt + '/' + maxRetries);
-      const prompt = buildPrompt(cat.id, cat.name, cat.nameZh, today);
-      const text = await callGemini(prompt);
-      console.log('  Response length:', text.length);
-      if (text.length < 100) throw new Error('Response too short: ' + text);
-      const article = cleanJSON(text);
-      return cleanArticle(article);
-    } catch(e) {
-      console.error('  Attempt ' + attempt + ' failed:', e.message.slice(0, 120));
-      if (attempt < maxRetries) {
-        const waitSec = e.retryDelay || (attempt * 40);
-        console.log('  Waiting ' + waitSec + 's before retry...');
-        await sleep(waitSec * 1000);
-      } else {
-        throw e;
-      }
-    }
-  }
-}
-
-// ── Notion helpers ──────────────────────────────────────────
+// ── Notion ──────────────────────────────────────────────────
 
 function notionRequest(path, method, payload) {
   const body = JSON.stringify(payload);
@@ -220,188 +237,125 @@ function notionRequest(path, method, payload) {
   return httpRequest(options, body);
 }
 
-function t(text) {
-  // Notion rich text block helper
-  return [{ type: 'text', text: { content: String(text).slice(0, 2000) } }];
-}
-
-function heading2(text) {
-  return { object: 'block', type: 'heading_2', heading_2: { rich_text: t(text) } };
-}
-
-function heading3(text) {
-  return { object: 'block', type: 'heading_3', heading_3: { rich_text: t(text) } };
-}
-
-function paragraph(text) {
-  return { object: 'block', type: 'paragraph', paragraph: { rich_text: t(text) } };
-}
-
-function divider() {
-  return { object: 'block', type: 'divider', divider: {} };
-}
+function t(text) { return [{ type: 'text', text: { content: String(text).slice(0, 2000) } }]; }
+function h2(text) { return { object: 'block', type: 'heading_2', heading_2: { rich_text: t(text) } }; }
+function h3(text) { return { object: 'block', type: 'heading_3', heading_3: { rich_text: t(text) } }; }
+function p(text)  { return { object: 'block', type: 'paragraph',  paragraph:  { rich_text: t(text) } }; }
+function hr()     { return { object: 'block', type: 'divider',    divider:    {} }; }
 
 function buildNotionBlocks(article) {
-  const catNames = {
-    tech: '\u30c6\u30af\u30ce\u30ed\u30b8\u30fc',
-    urban: '\u90fd\u5e02\u518d\u958b\u767a',
-    realestate: '\u4e0d\u52d5\u7522\u5e02\u5834',
-    economy: '\u7d93\u6fdf',
-    agri: '\u8fb2\u696d'
-  };
-  const catName = catNames[article.category] || article.category;
+  const catNames = { tech: 'テクノロジー', urban: '都市再開発', realestate: '不動産市場', economy: '経済', agri: '農業' };
   const blocks = [];
-
-  // Category badge + headline
-  blocks.push(heading2('\u3010' + catName + '\u3011 ' + article.titleJp));
-  blocks.push(paragraph(article.titleZh + '\uff08' + (article.source || '') + '\uff09'));
-  blocks.push(divider());
-
-  // Summary
-  blocks.push(heading3('\ud83d\udcf0 \u30cb\u30e5\u30fc\u30b9\u8981\u7d04'));
-  blocks.push(paragraph(article.summaryJp));
-  blocks.push(paragraph(article.summaryZh));
-  blocks.push(divider());
-
-  // Vocabulary
+  blocks.push(h2('【' + (catNames[article.category] || article.category) + '】 ' + article.titleJp));
+  blocks.push(p(article.titleZh + '（' + (article.source || '') + '）'));
+  blocks.push(hr());
+  blocks.push(h3('📰 ニュース要約'));
+  blocks.push(p(article.summaryJp));
+  blocks.push(p(article.summaryZh));
   if (article.vocabulary && article.vocabulary.length > 0) {
-    blocks.push(heading3('\ud83d\udcd6 \u91cd\u8981\u5358\u8a9e'));
+    blocks.push(hr());
+    blocks.push(h3('📖 重要単語（N1・ビジネス）'));
     for (const v of article.vocabulary) {
-      // Strip ruby tags for Notion
       const word = v.word.replace(/<[^>]+>/g, '');
-      const reading = v.reading || '';
-      blocks.push(paragraph('\u25b6 ' + word + '\uff08' + reading + '\uff09\u3000' + v.meaning));
-      blocks.push(paragraph('\u3000\u4f8b\uff1a' + v.example));
+      blocks.push(p('▶ ' + word + '（' + (v.reading||'') + '）　' + v.meaning));
+      blocks.push(p('　例：' + v.example));
     }
-    blocks.push(divider());
   }
-
-  // Grammar
   if (article.grammarPoints && article.grammarPoints.length > 0) {
-    blocks.push(heading3('\ud83d\udccc \u6587\u6cd5\u30fb\u8868\u73fe'));
+    blocks.push(hr());
+    blocks.push(h3('📌 文法・表現（N1・ビジネス）'));
     for (const g of article.grammarPoints) {
-      blocks.push(paragraph('\u25b6 ' + g.pattern + '\u3000\u2192\u3000' + g.meaning));
-      blocks.push(paragraph('\u3000' + g.example));
-      blocks.push(paragraph('\u3000' + g.exampleZh));
+      blocks.push(p('▶ ' + g.pattern + '　→　' + g.meaning));
+      blocks.push(p('　' + g.example));
+      blocks.push(p('　' + g.exampleZh));
     }
-    blocks.push(divider());
   }
-
-  // Key sentences
   if (article.keySentences && article.keySentences.length > 0) {
-    blocks.push(heading3('\ud83d\udd11 \u30ad\u30fc\u30bb\u30f3\u30c6\u30f3\u30b9'));
+    blocks.push(hr());
+    blocks.push(h3('🔑 キーセンテンス解析'));
     for (const s of article.keySentences) {
-      blocks.push(paragraph('\u25b6 ' + s.jp));
-      blocks.push(paragraph('\u3000' + s.zh));
-      blocks.push(paragraph('\u3000\ud83d\udccc ' + s.note));
+      blocks.push(p('▶ ' + s.jp));
+      blocks.push(p('　' + s.zh));
+      blocks.push(p('　📌 ' + s.note));
     }
   }
-
   return blocks;
 }
 
 async function pushToNotion(articles, today) {
   console.log('\nPushing to Notion...');
-
-  // Build all blocks for the page
   const allBlocks = [];
-
   for (let i = 0; i < articles.length; i++) {
     const a = articles[i];
-    if (!a.titleJp || a.titleZh === '\u751f\u6210\u5931\u6557') {
-      console.log('Skipping failed article:', a.category);
-      continue;
-    }
-    const blocks = buildNotionBlocks(a);
-    allBlocks.push(...blocks);
-    if (i < articles.length - 1) allBlocks.push(divider());
+    if (!a.titleJp || a.titleZh === '生成失敗') continue;
+    allBlocks.push(...buildNotionBlocks(a));
+    if (i < articles.length - 1) allBlocks.push(hr());
   }
+  if (allBlocks.length === 0) { console.log('No valid articles for Notion.'); return; }
 
-  if (allBlocks.length === 0) {
-    console.log('No valid articles to push to Notion.');
-    return;
-  }
-
-  // Create page in Notion database
   const dbId = notionDbId.replace(/-/g, '').replace(/\?.*$/, '');
-
-  const payload = {
+  const res = await notionRequest('/v1/pages', 'POST', {
     parent: { database_id: dbId },
-    properties: {
-      title: {
-        title: t(today + ' \u65e5\u672c\u8a9e\u30cb\u30e5\u30fc\u30b9\u5b66\u7fd2')
-      }
-    },
-    children: allBlocks.slice(0, 100) // Notion API limit per request
-  };
-
-  const res = await notionRequest('/v1/pages', 'POST', payload);
+    properties: { title: { title: t(today + ' 日本語ニュース学習') } },
+    children: allBlocks.slice(0, 100)
+  });
   const data = JSON.parse(res.body);
+  if (res.status !== 200) { console.error('Notion error:', res.status, res.body.slice(0, 200)); return; }
+  console.log('Notion page created:', data.id);
 
-  if (res.status !== 200) {
-    console.error('Notion API error:', res.status, res.body.slice(0, 300));
-    return;
-  }
-
-  console.log('Notion page created:', data.url || data.id);
-
-  // If we have more than 100 blocks, append the rest
   if (allBlocks.length > 100) {
     const pageId = data.id;
-    const remaining = allBlocks.slice(100);
-    // Append in chunks of 100
-    for (let i = 0; i < remaining.length; i += 100) {
-      const chunk = remaining.slice(i, i + 100);
-      await notionRequest('/v1/blocks/' + pageId + '/children', 'PATCH', { children: chunk });
+    for (let i = 100; i < allBlocks.length; i += 100) {
+      await notionRequest('/v1/blocks/' + pageId + '/children', 'PATCH', { children: allBlocks.slice(i, i + 100) });
       await sleep(500);
     }
-    console.log('Appended remaining blocks to Notion page.');
   }
 }
 
 // ── Main ────────────────────────────────────────────────────
 
 async function main() {
-  const articles = [];
+  const prompt = buildPrompt(today);
+  let parsed = null;
 
-  for (let i = 0; i < categories.length; i++) {
-    const cat = categories[i];
-    console.log('\nGenerating: ' + cat.name + ' (' + cat.id + ')');
+  for (let attempt = 1; attempt <= 3; attempt++) {
     try {
-      const article = await generateArticleWithRetry(cat);
-      articles.push(article);
-      console.log('Success:', cat.id);
+      console.log('Calling Gemini API (attempt ' + attempt + '/3)...');
+      const text = await callGemini(prompt);
+      console.log('Response length:', text.length);
+      parsed = cleanJSON(text);
+      console.log('Parsed successfully, articles:', parsed.articles.length);
+      break;
     } catch(e) {
-      console.error('All attempts failed for', cat.id, ':', e.message.slice(0, 100));
-      articles.push({
-        category: cat.id,
-        titleJp: cat.name,
-        titleZh: '\u751f\u6210\u5931\u6557',
-        summaryJp: '\u30b3\u30f3\u30c6\u30f3\u30c4\u306e\u751f\u6210\u306b\u5931\u6557\u3057\u307e\u3057\u305f\u3002',
-        summaryZh: '\u5167\u5bb9\u751f\u6210\u5931\u6557\uff0c\u8acb\u7a0d\u5f8c\u518d\u8a66\u3002',
-        source: '', vocabulary: [], grammarPoints: [], keySentences: []
-      });
-    }
-    if (i < categories.length - 1) {
-      console.log('Waiting 15s...');
-      await sleep(15000);
+      console.error('Attempt ' + attempt + ' failed:', e.message.slice(0, 150));
+      if (attempt < 3) {
+        const wait = attempt * 30;
+        console.log('Waiting ' + wait + 's...');
+        await sleep(wait * 1000);
+      }
     }
   }
 
-  // Save today.json for the web app
-  const output = { date: today, articles };
-  fs.writeFileSync('today.json', JSON.stringify(output, null, 2), 'utf8');
-  console.log('\nSaved today.json with', articles.length, 'articles');
-
-  // Push to Notion
-  if (notionToken && notionDbId) {
-    try {
-      await pushToNotion(articles, today);
-    } catch(e) {
-      console.error('Notion push failed:', e.message);
-    }
+  if (!parsed) {
+    parsed = {
+      date: today,
+      articles: ['tech','urban','realestate','economy','agri'].map(id => ({
+        category: id, titleJp: id, titleZh: '生成失敗',
+        summaryJp: 'コンテンツの生成に失敗しました。',
+        summaryZh: '內容生成失敗，請稍後再試。',
+        source: '', vocabulary: [], grammarPoints: [], keySentences: []
+      }))
+    };
   } else {
-    console.log('Notion credentials not set, skipping.');
+    parsed.articles = cleanArticles(parsed.articles);
+  }
+
+  fs.writeFileSync('today.json', JSON.stringify(parsed, null, 2), 'utf8');
+  console.log('Saved today.json for', today);
+
+  if (notionToken && notionDbId) {
+    try { await pushToNotion(parsed.articles, today); }
+    catch(e) { console.error('Notion push failed:', e.message); }
   }
 }
 
