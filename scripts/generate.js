@@ -31,7 +31,7 @@ const categories = [
       'https://www.ur-net.go.jp/news/ur_release.xml',
       'https://suumo.jp/journal/feed/'
     ],
-    keywords: ['\u518d\u958b\u767a', '\u307e\u3061\u3065\u304f\u308a', '\u5e02\u8857\u5730', '\u90fd\u5e02\u518d\u751f', '\u56e3\u5730', '\u5efa\u66ff', '\u6574\u5099', '\u5730\u533a\u6d3b\u6027\u5316', '\u8857\u3065\u304f\u308a'],
+    keywords: ['\u518d\u958b\u767a', '\u307e\u3061\u3065\u304f\u308a', '\u5e02\u8857\u5730', '\u90fd\u5e02\u518d\u751f', '\u56e3\u5730', '\u5efa\u66ff', '\u6574\u5099', '\u5730\u533a\u6d3b\u6027\u5316', '\u8857\u3065\u304f\u308a', '\u5efa\u8a2d', '\u9053\u8def', '\u99c5\u524d', '\u30bf\u30ef\u30fc', '\u8907\u5408\u65bd\u8a2d'],
     source: 'UR\u90fd\u5e02\u6a5f\u69cb / SUUMO'
   },
   {
@@ -85,7 +85,7 @@ function httpGet(url) {
       res.on('end', () => resolve(Buffer.concat(chunks).toString('utf8')));
     });
     req.on('error', reject);
-    req.setTimeout(15000, () => { req.destroy(); reject(new Error('RSS fetch timeout: ' + url)); });
+    req.setTimeout(25000, () => { req.destroy(); reject(new Error('RSS fetch timeout: ' + url)); });
   });
 }
 
@@ -110,12 +110,11 @@ function parseRSS(xml) {
   const items = [];
   const itemRegex = /<item[\s>]([\s\S]*?)<\/item>|<entry[\s>]([\s\S]*?)<\/entry>/gi;
   let match;
-  while ((match = itemRegex.exec(xml)) !== null && items.length < 8) {
+  while ((match = itemRegex.exec(xml)) !== null && items.length < 10) {
     const block = match[1] || match[2];
     const titleMatch = block.match(/<title[^>]*>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/title>/i);
     const descMatch = block.match(/<description[^>]*>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/description>/i)
       || block.match(/<summary[^>]*>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/summary>/i);
-
     if (titleMatch) {
       const title = titleMatch[1]
         .replace(/<[^>]+>/g, '')
@@ -147,15 +146,20 @@ async function fetchRSS(cat) {
     }
   }
 
-  // キーワードフィルタがある場合は関連ニュースを優先
+  if (allItems.length === 0) {
+    console.log('  No items fetched for', cat.id);
+    return [];
+  }
+
+  // キーワードフィルタがある場合は関連ニュースのみ使用
   if (cat.keywords && cat.keywords.length > 0) {
     const filtered = allItems.filter(item =>
       cat.keywords.some(kw => item.title.includes(kw) || item.desc.includes(kw))
     );
     console.log('  Keyword filtered:', filtered.length, '/', allItems.length, 'items for', cat.id);
-    // フィルタ結果が少ない場合は全件も混ぜる
-    const result = filtered.length >= 2 ? filtered : [...filtered, ...allItems.slice(0, 5 - filtered.length)];
-    return result.slice(0, 5);
+    // フィルタ結果があればそれのみ使用
+    // なければ全件をそのままGeminiに渡し、prompt側で判断させる
+    return filtered.length > 0 ? filtered.slice(0, 5) : allItems.slice(0, 5);
   }
 
   return allItems.slice(0, 5);
@@ -213,33 +217,40 @@ function buildPrompt(today, rssItems) {
         if (item.desc) newsContextParts.push('   ' + item.desc);
       });
     } else {
-      newsContextParts.push('（RSS取得失敗 - 一般的な最新ニュースを使用）');
+      // urban の場合は都市再開発系で生成するよう明示
+      if (cat.id === 'urban') {
+        newsContextParts.push('（RSS\u53d6\u5f97\u5931\u6557 - \u90fd\u5e02\u518d\u958b\u767a\u30fb\u307e\u3061\u3065\u304f\u308a\u95a2\u9023\u306e\u6700\u65b0\u30cb\u30e5\u30fc\u30b9\u3092\u81ea\u5206\u3067\u751f\u6210\u3059\u308b\u3053\u3068\uff09');
+      } else {
+        newsContextParts.push('（RSS\u53d6\u5f97\u5931\u6557 - \u6700\u65b0\u30cb\u30e5\u30fc\u30b9\u3092\u81ea\u5206\u3067\u751f\u6210\u3059\u308b\u3053\u3068\uff09');
+      }
     }
   }
-
-  const urbanKeywords = '\u518d\u958b\u767a\u30fb\u307e\u3061\u3065\u304f\u308a\u30fb\u5e02\u8857\u5730\u30fb\u90fd\u5e02\u518d\u751f\u30fb\u5730\u533a\u6d3b\u6027\u5316';
 
   return [
     'You are an expert Japanese language teacher specializing in business Japanese for Taiwanese professionals.',
     'Today is ' + today + '.',
     '',
-    'REAL NEWS from RSS feeds (use these as the basis for your content):',
+    'REAL NEWS from RSS feeds:',
     newsContextParts.join('\n'),
     '',
-    'TASK: Generate advanced Japanese learning content for ALL 5 categories based on the real news above.',
+    'TASK: Generate advanced Japanese learning content for ALL 5 categories.',
     '',
-    'SPECIAL INSTRUCTION for urban category (\u90fd\u5e02\u518d\u958b\u767a):',
-    'From the UR\u90fd\u5e02\u6a5f\u69cb / SUUMO news above, select items most related to: ' + urbanKeywords,
-    'If no clearly relevant items exist, create content about a recent urban redevelopment topic in Japan.',
+    '=== CRITICAL RULE FOR "urban" CATEGORY (\u90fd\u5e02\u518d\u958b\u767a) ===',
+    'The "urban" category MUST cover topics related to: \u5e02\u8857\u5730\u518d\u958b\u767a\u4e8b\u696d, \u307e\u3061\u3065\u304f\u308a, \u90fd\u5e02\u518d\u751f, \u56e3\u5730\u5efa\u66ff, \u99c5\u524d\u518d\u958b\u767a, \u5efa\u7bc9\u8a08\u753b, \u5730\u533a\u6d3b\u6027\u5316, \u95a2\u9023\u5354\u5b9a',
+    'DO NOT use AI, economy, agriculture, or any other unrelated topics for the "urban" category.',
+    'If the RSS news above contains relevant urban/redevelopment items, use them.',
+    'If not, CREATE a realistic urban redevelopment news story based on actual recent projects in Japan (e.g. \u9ad8\u8f2a\u30b2\u30fc\u30c8\u30a6\u30a7\u30a4\u30b7\u30c6\u30a3, \u6e0b\u8c37\u518d\u958b\u767a, \u864e\u30ce\u9580\u30d2\u30eb\u30ba, \u6771\u6b66\u66f3\u8239\u99c5\u524d\u518d\u958b\u767a, \u4e2d\u91ce\u99c5\u65b0\u5317\u53e3 etc.)',
+    'NEVER substitute the "urban" category with AI news, technology news, or any other off-topic content.',
+    '=== END CRITICAL RULE ===',
     '',
-    'CONTENT REQUIREMENTS:',
-    '- titleJp: Use the actual Japanese headline from RSS, or close paraphrase.',
-    '- summaryJp: DETAILED 5-6 sentence summary (~500 Japanese characters). Formal written Japanese (\u66f8\u304d\u8a00\u8449). Include specific facts, numbers, context.',
-    '- summaryZh: Detailed Traditional Chinese translation matching the Japanese summary.',
-    '- vocabulary: N1-level or business Japanese words. Avoid basic N2.',
-    '- grammarPoints: Advanced N1 grammar (\u301c\u306b\u969b\u3057\u3066\u3001\u301c\u3092\u3082\u3063\u3066\u3001\u301c\u306b\u57fa\u3065\u304d\u3001\u301c\u3092\u4f59\u5100\u306a\u304f\u3055\u308c\u308b etc.)',
-    '- keySentences: Complex sentences from the news with advanced grammar.',
-    '- note: Grammar explanation with usage tips in Traditional Chinese.',
+    'CONTENT REQUIREMENTS (all categories):',
+    '- titleJp: Use actual Japanese headline from RSS, or create a realistic one based on real Japan news.',
+    '- summaryJp: DETAILED 5-6 sentence summary (~500 Japanese characters). Formal written Japanese. Specific facts and context.',
+    '- summaryZh: Detailed Traditional Chinese translation.',
+    '- vocabulary: N1-level or business Japanese words only. No basic N2.',
+    '- grammarPoints: Advanced N1 patterns (\u301c\u306b\u969b\u3057\u3066, \u301c\u3092\u3082\u3063\u3066, \u301c\u306b\u57fa\u3065\u304d, \u301c\u3092\u4f59\u5100\u306a\u304f\u3055\u308c\u308b etc.)',
+    '- keySentences: Complex sentences with advanced grammar worth studying.',
+    '- note: Detailed grammar explanation in Traditional Chinese.',
     '',
     'STRICT FORMAT RULES:',
     '- Output ONLY a single valid JSON object. No extra text.',
@@ -248,38 +259,38 @@ function buildPrompt(today, rssItems) {
     '- Only "reading" field in vocabulary contains hiragana.',
     '- No newlines or control characters inside JSON string values.',
     '',
-    'JSON structure (fill ALL fields with complete content for all 5 categories):',
+    'JSON structure (fill ALL 5 categories completely):',
     '{',
     '  "date": "' + today + '",',
     '  "articles": [',
     '    {',
     '      "category": "tech",',
-    '      "titleJp": "NHK\u304b\u3089\u306e\u5b9f\u969b\u306e\u30c6\u30af\u30ce\u30ed\u30b8\u30fc\u30cb\u30e5\u30fc\u30b9\u898b\u51fa\u3057",',
+    '      "titleJp": "NHK\u304b\u3089\u306e\u30c6\u30af\u30ce\u30ed\u30b8\u30fc\u30cb\u30e5\u30fc\u30b9\u898b\u51fa\u3057",',
     '      "titleZh": "\u7e41\u9ad4\u4e2d\u6587\u6a19\u984c",',
-    '      "summaryJp": "5\u30186\u6587\u306e\u8a73\u7d30\u306a\u8981\u7d04\u3002\u7d044500\u6587\u5b57\u3002\u66f8\u304d\u8a00\u8449\u3002",',
+    '      "summaryJp": "5\u30186\u6587\u306e\u8a73\u7d30\u8981\u7d04\u3002\u66f8\u304d\u8a00\u8449\u3002\u7d044500\u6587\u5b57\u3002",',
     '      "summaryZh": "\u8a73\u7d30\u306a\u7e41\u9ad4\u4e2d\u6587\u6458\u8981",',
     '      "source": "NHK",',
     '      "vocabulary": [',
-    '        {"word": "N1\u30d3\u30b8\u30cd\u30b9\u6f22\u5b57", "reading": "\u3088\u307f\u304c\u306a", "meaning": "\u7e41\u9ad4\u610f\u601d", "example": "\u30d3\u30b8\u30cd\u30b9\u4f8b\u6587"},',
-    '        {"word": "N1\u30d3\u30b8\u30cd\u30b9\u6f22\u5b57", "reading": "\u3088\u307f\u304c\u306a", "meaning": "\u7e41\u9ad4\u610f\u601d", "example": "\u4f8b\u6587"},',
-    '        {"word": "N1\u30d3\u30b8\u30cd\u30b9\u6f22\u5b57", "reading": "\u3088\u307f\u304c\u306a", "meaning": "\u7e41\u9ad4\u610f\u601d", "example": "\u4f8b\u6587"},',
-    '        {"word": "N1\u30d3\u30b8\u30cd\u30b9\u6f22\u5b57", "reading": "\u3088\u307f\u304c\u306a", "meaning": "\u7e41\u9ad4\u610f\u601d", "example": "\u4f8b\u6587"},',
-    '        {"word": "N1\u30d3\u30b8\u30cd\u30b9\u6f22\u5b57", "reading": "\u3088\u307f\u304c\u306a", "meaning": "\u7e41\u9ad4\u610f\u601d", "example": "\u4f8b\u6587"}',
+    '        {"word": "N1\u30d3\u30b8\u30cd\u30b9\u6f22\u5b57", "reading": "\u3088\u307f", "meaning": "\u7e41\u9ad4\u610f\u601d", "example": "\u4f8b\u6587"},',
+    '        {"word": "N1\u30d3\u30b8\u30cd\u30b9\u6f22\u5b57", "reading": "\u3088\u307f", "meaning": "\u7e41\u9ad4\u610f\u601d", "example": "\u4f8b\u6587"},',
+    '        {"word": "N1\u30d3\u30b8\u30cd\u30b9\u6f22\u5b57", "reading": "\u3088\u307f", "meaning": "\u7e41\u9ad4\u610f\u601d", "example": "\u4f8b\u6587"},',
+    '        {"word": "N1\u30d3\u30b8\u30cd\u30b9\u6f22\u5b57", "reading": "\u3088\u307f", "meaning": "\u7e41\u9ad4\u610f\u601d", "example": "\u4f8b\u6587"},',
+    '        {"word": "N1\u30d3\u30b8\u30cd\u30b9\u6f22\u5b57", "reading": "\u3088\u307f", "meaning": "\u7e41\u9ad4\u610f\u601d", "example": "\u4f8b\u6587"}',
     '      ],',
     '      "grammarPoints": [',
-    '        {"pattern": "\u301cN1\u6587\u6cd5", "meaning": "\u7e41\u9ad4\u8aaa\u660e\u3068\u4f7f\u7528\u5834\u666f", "example": "\u4f8b\u6587", "exampleZh": "\u7e41\u9ad4\u7ffb\u8b6f"},',
-    '        {"pattern": "\u301cN1\u6587\u6cd5", "meaning": "\u7e41\u9ad4\u8aaa\u660e\u3068\u4f7f\u7528\u5834\u666f", "example": "\u4f8b\u6587", "exampleZh": "\u7e41\u9ad4\u7ffb\u8b6f"},',
-    '        {"pattern": "\u301cN1\u6587\u6cd5", "meaning": "\u7e41\u9ad4\u8aaa\u660e\u3068\u4f7f\u7528\u5834\u666f", "example": "\u4f8b\u6587", "exampleZh": "\u7e41\u9ad4\u7ffb\u8b6f"}',
+    '        {"pattern": "\u301cN1\u6587\u6cd5", "meaning": "\u7e41\u9ad4\u8aaa\u660e", "example": "\u4f8b\u6587", "exampleZh": "\u7e41\u9ad4\u7ffb\u8b6f"},',
+    '        {"pattern": "\u301cN1\u6587\u6cd5", "meaning": "\u7e41\u9ad4\u8aaa\u660e", "example": "\u4f8b\u6587", "exampleZh": "\u7e41\u9ad4\u7ffb\u8b6f"},',
+    '        {"pattern": "\u301cN1\u6587\u6cd5", "meaning": "\u7e41\u9ad4\u8aaa\u660e", "example": "\u4f8b\u6587", "exampleZh": "\u7e41\u9ad4\u7ffb\u8b6f"}',
     '      ],',
     '      "keySentences": [',
-    '        {"jp": "\u30cb\u30e5\u30fc\u30b9\u306b\u95a2\u9023\u3059\u308b\u8907\u96d1\u306a\u6587", "zh": "\u7e41\u9ad4\u7ffb\u8b6f", "note": "\u8a73\u7d30\u306a\u6587\u6cd5\u89e3\u8aac\uff08\u7e41\u9ad4\u4e2d\u6587\uff09"},',
-    '        {"jp": "\u8907\u96d1\u306a\u6587", "zh": "\u7e41\u9ad4\u7ffb\u8b6f", "note": "\u89e3\u8aac\uff08\u7e41\u9ad4\u4e2d\u6587\uff09"},',
-    '        {"jp": "\u8907\u96d1\u306a\u6587", "zh": "\u7e41\u9ad4\u7ffb\u8b6f", "note": "\u89e3\u8aac\uff08\u7e41\u9ad4\u4e2d\u6587\uff09"}',
+    '        {"jp": "\u8907\u96d1\u306a\u6587", "zh": "\u7e41\u9ad4\u7ffb\u8b6f", "note": "\u8a73\u7d30\u306a\u6587\u6cd5\u89e3\u8aac\uff08\u7e41\u9ad4\uff09"},',
+    '        {"jp": "\u8907\u96d1\u306a\u6587", "zh": "\u7e41\u9ad4\u7ffb\u8b6f", "note": "\u6587\u6cd5\u89e3\u8aac\uff08\u7e41\u9ad4\uff09"},',
+    '        {"jp": "\u8907\u96d1\u306a\u6587", "zh": "\u7e41\u9ad4\u7ffb\u8b6f", "note": "\u6587\u6cd5\u89e3\u8aac\uff08\u7e41\u9ad4\uff09"}',
     '      ]',
     '    },',
     '    {',
     '      "category": "urban",',
-    '      "titleJp": "UR\u6a5f\u69cb\u307e\u305f\u306fSUUMO\u304b\u3089\u306e\u90fd\u5e02\u518d\u958b\u767a\u95a2\u9023\u30cb\u30e5\u30fc\u30b9",',
+    '      "titleJp": "*** MUST BE urban redevelopment topic - \u5e02\u8857\u5730\u518d\u958b\u767a\u30fb\u307e\u3061\u3065\u304f\u308a\u95a2\u9023\u306e\u30cb\u30e5\u30fc\u30b9 ***",',
     '      "titleZh": "\u7e41\u9ad4\u6a19\u984c",',
     '      "summaryJp": "5\u30186\u6587\u306e\u8a73\u7d30\u8981\u7d04",',
     '      "summaryZh": "\u7e41\u9ad4\u6458\u8981",',
@@ -312,7 +323,7 @@ function buildPrompt(today, rssItems) {
     '    },',
     '    {',
     '      "category": "agri",',
-    '      "titleJp": "\u8fb2\u6797\u6c34\u7523\u7701\u307e\u305f\u306fNHK\u304b\u3089\u306e\u8fb2\u696d\u30cb\u30e5\u30fc\u30b9",',
+    '      "titleJp": "\u8fb2\u6797\u6c34\u7523\u7701 / NHK\u304b\u3089\u306e\u8fb2\u696d\u30cb\u30e5\u30fc\u30b9",',
     '      "titleZh": "\u7e41\u9ad4\u6a19\u984c",',
     '      "summaryJp": "5\u30186\u6587\u306e\u8a73\u7d30\u8981\u7d04",',
     '      "summaryZh": "\u7e41\u9ad4\u6458\u8981",',
@@ -324,7 +335,7 @@ function buildPrompt(today, rssItems) {
     '  ]',
     '}',
     '',
-    'Fill ALL fields in ALL 5 articles with complete real content. Use Traditional Chinese only. Every summary ~500 Japanese characters. Every vocabulary word N1 or business level.'
+    'REMINDER: Fill ALL fields completely. "urban" category MUST be about urban redevelopment/まちづくり ONLY. Traditional Chinese throughout.'
   ].join('\n');
 }
 
@@ -473,7 +484,7 @@ async function main() {
   const rssItems = {};
   await Promise.all(categories.map(async (cat) => {
     rssItems[cat.id] = await fetchRSS(cat);
-    console.log('  [' + cat.id + '] got', rssItems[cat.id].length, 'items');
+    console.log('  [' + cat.id + '] total items:', rssItems[cat.id].length);
   }));
 
   // Step 2: Call Gemini once with all context
