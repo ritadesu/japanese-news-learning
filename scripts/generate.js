@@ -1,4 +1,5 @@
 const https = require('https');
+const http = require('http');
 const fs = require('fs');
 
 const apiKey = process.env.GEMINI_API_KEY;
@@ -12,8 +13,70 @@ const today = now.getFullYear() + '\u5e74' +
 
 console.log('Generating news for:', today);
 
+// ── カテゴリと RSS 設定 ──────────────────────────────────────
+const categories = [
+  {
+    id: 'tech',
+    name: '\u30c6\u30af\u30ce\u30ed\u30b8\u30fc',
+    nameZh: '\u79d1\u6280',
+    rss: 'https://www3.nhk.or.jp/rss/news/cat3.xml',
+    source: 'NHK'
+  },
+  {
+    id: 'urban',
+    name: '\u90fd\u5e02\u518d\u958b\u767a',
+    nameZh: '\u90fd\u5e02\u518d\u958b\u767a',
+    rss: 'https://rss.asahi.com/rss/asahi/newsheadlines.rdf',
+    source: '\u671d\u65e5\u65b0\u805e'
+  },
+  {
+    id: 'realestate',
+    name: '\u4e0d\u52d5\u7523\u5e02\u5834',
+    nameZh: '\u4e0d\u52d5\u7522\u5e02\u5834',
+    rss: 'https://suumo.jp/journal/feed/',
+    source: 'SUUMO\u30b8\u30e3\u30fc\u30ca\u30eb'
+  },
+  {
+    id: 'economy',
+    name: '\u7d4c\u6e08',
+    nameZh: '\u7d93\u6fdf',
+    rss: 'https://www3.nhk.or.jp/rss/news/cat5.xml',
+    source: 'NHK'
+  },
+  {
+    id: 'agri',
+    name: '\u8fb2\u696d',
+    nameZh: '\u8fb2\u696d',
+    rss: 'https://www3.nhk.or.jp/rss/news/cat7.xml',
+    source: 'NHK'
+  }
+];
+
 function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+// ── HTTP リクエスト ──────────────────────────────────────────
+function httpGet(url) {
+  return new Promise((resolve, reject) => {
+    const lib = url.startsWith('https') ? https : http;
+    const req = lib.get(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (compatible; NewsLearningBot/1.0)',
+        'Accept': 'application/rss+xml, application/xml, text/xml, */*'
+      }
+    }, (res) => {
+      // Handle redirects
+      if (res.statusCode === 301 || res.statusCode === 302) {
+        return httpGet(res.headers.location).then(resolve).catch(reject);
+      }
+      const chunks = [];
+      res.on('data', chunk => chunks.push(chunk));
+      res.on('end', () => resolve(Buffer.concat(chunks).toString('utf8')));
+    });
+    req.on('error', reject);
+    req.setTimeout(15000, () => { req.destroy(); reject(new Error('RSS fetch timeout')); });
+  });
 }
 
 function httpRequest(options, body) {
@@ -32,6 +95,63 @@ function httpRequest(options, body) {
   });
 }
 
+// ── RSS パース ───────────────────────────────────────────────
+function parseRSS(xml) {
+  const items = [];
+  // Match <item> or <entry> blocks
+  const itemRegex = /<item[\s>]([\s\S]*?)<\/item>|<entry[\s>]([\s\S]*?)<\/entry>/gi;
+  let match;
+  while ((match = itemRegex.exec(xml)) !== null && items.length < 5) {
+    const block = match[1] || match[2];
+    // Extract title
+    const titleMatch = block.match(/<title[^>]*>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/title>/i);
+    // Extract description/summary
+    const descMatch = block.match(/<description[^>]*>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/description>/i)
+      || block.match(/<summary[^>]*>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/summary>/i);
+
+    if (titleMatch) {
+      const title = titleMatch[1]
+        .replace(/<[^>]+>/g, '')
+        .replace(/&amp;/g, '&')
+        .replace(/&lt;/g, '<')
+        .replace(/&gt;/g, '>')
+        .replace(/&quot;/g, '"')
+        .replace(/&#39;/g, "'")
+        .trim();
+
+      const desc = descMatch ? descMatch[1]
+        .replace(/<[^>]+>/g, '')
+        .replace(/&amp;/g, '&')
+        .replace(/&lt;/g, '<')
+        .replace(/&gt;/g, '>')
+        .replace(/&quot;/g, '"')
+        .replace(/&#39;/g, "'")
+        .trim()
+        .slice(0, 300) : '';
+
+      if (title && title.length > 3) {
+        items.push({ title, desc });
+      }
+    }
+  }
+  return items;
+}
+
+// ── RSS 取得 ─────────────────────────────────────────────────
+async function fetchRSS(cat) {
+  try {
+    console.log('  Fetching RSS:', cat.rss);
+    const xml = await httpGet(cat.rss);
+    const items = parseRSS(xml);
+    console.log('  Got', items.length, 'items from RSS');
+    return items;
+  } catch(e) {
+    console.error('  RSS fetch failed:', e.message);
+    return [];
+  }
+}
+
+// ── Gemini API ───────────────────────────────────────────────
 function callGemini(prompt) {
   return new Promise(async (resolve, reject) => {
     const body = JSON.stringify({
@@ -57,8 +177,7 @@ function callGemini(prompt) {
       const res = await httpRequest(options, body);
       const parsed = JSON.parse(res.body);
       if (parsed.error) {
-        const err = new Error('API Error: ' + (parsed.error.message || JSON.stringify(parsed.error)));
-        reject(err);
+        reject(new Error('API Error: ' + (parsed.error.message || JSON.stringify(parsed.error))));
         return;
       }
       let text = '';
@@ -72,27 +191,48 @@ function callGemini(prompt) {
   });
 }
 
-function buildPrompt(today) {
+// ── Prompt 構築 ──────────────────────────────────────────────
+function buildPrompt(today, rssItems) {
+  // Build news context from RSS items
+  const newsContextParts = [];
+  for (const cat of categories) {
+    const items = rssItems[cat.id] || [];
+    if (items.length > 0) {
+      newsContextParts.push('【' + cat.name + '】');
+      items.forEach((item, i) => {
+        newsContextParts.push((i + 1) + '. ' + item.title);
+        if (item.desc) newsContextParts.push('   ' + item.desc);
+      });
+    } else {
+      newsContextParts.push('【' + cat.name + '】（RSS取得失敗 - 一般的なニュースを使用）');
+    }
+  }
+
   return [
     'You are an expert Japanese language teacher specializing in business Japanese for Taiwanese professionals.',
     'Today is ' + today + '.',
-    'Generate advanced Japanese learning content based on recent Japanese news for ALL 5 categories.',
+    '',
+    'REAL NEWS HEADLINES (use these as the basis for your content):',
+    newsContextParts.join('\n'),
+    '',
+    'TASK: Generate advanced Japanese learning content for ALL 5 categories based on the real news headlines above.',
+    'For each category, pick the MOST RELEVANT headline from the list above and create detailed learning content.',
     '',
     'CONTENT REQUIREMENTS:',
-    '- summaryJp: Write a DETAILED 5-6 sentence summary (~500 Japanese characters). Use rich, formal written Japanese (書き言葉). Include specific facts, numbers, and context from the news.',
+    '- titleJp: Use the actual Japanese headline (or a close paraphrase) from the RSS data above.',
+    '- summaryJp: Write a DETAILED 5-6 sentence summary (~500 Japanese characters). Use formal written Japanese (書き言葉). Expand on the headline with context and analysis.',
     '- summaryZh: Detailed Traditional Chinese translation matching the Japanese summary.',
-    '- vocabulary: Choose N1-level or business Japanese words (ビジネス日本語). Words commonly used in newspapers, corporate settings, or formal documents. Avoid basic N2 words.',
-    '- grammarPoints: Use advanced N1 grammar patterns or formal written expressions (〜に際して、〜をもって、〜に基づき、〜を余儀なくされる etc.)',
-    '- keySentences: Pick complex sentences from the summary with advanced grammar worth studying.',
-    '- note in keySentences: Explain the grammar point and nuance in Traditional Chinese, give usage tips.',
+    '- vocabulary: Choose N1-level or business Japanese words from the article context. Avoid basic N2 words.',
+    '- grammarPoints: Use advanced N1 grammar or formal written expressions (〜に際して、〜をもって、〜に基づき、〜を余儀なくされる etc.)',
+    '- keySentences: Pick or create complex sentences related to the news with advanced grammar.',
+    '- note: Explain grammar points with usage tips in Traditional Chinese.',
     '',
     'STRICT FORMAT RULES:',
-    '- Output ONLY a single valid JSON object. No extra text before or after.',
+    '- Output ONLY a single valid JSON object. No extra text.',
     '- ALL Chinese must be Traditional Chinese (繁體中文), NOT Simplified.',
-    '- Japanese text: plain text only. NO furigana in parentheses like 東京（とうきょう）. NO HTML tags.',
-    '- Only the "reading" field in vocabulary items contains hiragana reading.',
-    '- No newlines or control characters inside any JSON string values.',
-    '- Strings must be on a single line each.',
+    '- Japanese text: plain text only. NO furigana in parentheses. NO HTML tags.',
+    '- Only the "reading" field in vocabulary contains hiragana.',
+    '- No newlines or control characters inside JSON string values.',
     '',
     'Output this exact JSON with complete real content for all 5 categories:',
     '{',
@@ -100,69 +240,69 @@ function buildPrompt(today) {
     '  "articles": [',
     '    {',
     '      "category": "tech",',
-    '      "titleJp": "テクノロジーに関する実際のニュース見出し",',
+    '      "titleJp": "NHKから取得した実際のテクノロジーニュース見出し",',
     '      "titleZh": "繁體中文標題",',
-    '      "summaryJp": "5〜6文の詳細な要約。約500文字。具体的な数字や背景情報を含む。書き言葉で書く。",',
-    '      "summaryZh": "與日文摘要對應的詳細繁體中文翻譯",',
-    '      "source": "日本経済新聞",',
+    '      "summaryJp": "5〜6文の詳細な要約。約500文字。書き言葉。",',
+    '      "summaryZh": "詳細な繁體中文摘要",',
+    '      "source": "NHK",',
     '      "vocabulary": [',
-    '        {"word": "N1またはビジネス漢字語", "reading": "よみがな", "meaning": "繁體中文意思", "example": "ビジネスシーンでの例文"},',
-    '        {"word": "N1またはビジネス漢字語", "reading": "よみがな", "meaning": "繁體中文意思", "example": "例文"},',
-    '        {"word": "N1またはビジネス漢字語", "reading": "よみがな", "meaning": "繁體中文意思", "example": "例文"},',
-    '        {"word": "N1またはビジネス漢字語", "reading": "よみがな", "meaning": "繁體中文意思", "example": "例文"},',
-    '        {"word": "N1またはビジネス漢字語", "reading": "よみがな", "meaning": "繁體中文意思", "example": "例文"}',
+    '        {"word": "N1ビジネス漢字", "reading": "よみがな", "meaning": "繁體意思", "example": "例文"},',
+    '        {"word": "N1ビジネス漢字", "reading": "よみがな", "meaning": "繁體意思", "example": "例文"},',
+    '        {"word": "N1ビジネス漢字", "reading": "よみがな", "meaning": "繁體意思", "example": "例文"},',
+    '        {"word": "N1ビジネス漢字", "reading": "よみがな", "meaning": "繁體意思", "example": "例文"},',
+    '        {"word": "N1ビジネス漢字", "reading": "よみがな", "meaning": "繁體意思", "example": "例文"}',
     '      ],',
     '      "grammarPoints": [',
-    '        {"pattern": "〜N1文法パターン", "meaning": "繁體中文說明與使用場景", "example": "新聞・ビジネスシーンからの例文", "exampleZh": "繁體翻譯"},',
-    '        {"pattern": "〜N1文法パターン", "meaning": "繁體中文說明與使用場景", "example": "例文", "exampleZh": "繁體翻譯"},',
-    '        {"pattern": "〜N1文法パターン", "meaning": "繁體中文說明與使用場景", "example": "例文", "exampleZh": "繁體翻譯"}',
+    '        {"pattern": "〜N1文法", "meaning": "繁體說明と使用場景", "example": "例文", "exampleZh": "繁體翻譯"},',
+    '        {"pattern": "〜N1文法", "meaning": "繁體說明と使用場景", "example": "例文", "exampleZh": "繁體翻譯"},',
+    '        {"pattern": "〜N1文法", "meaning": "繁體說明と使用場景", "example": "例文", "exampleZh": "繁體翻譯"}',
     '      ],',
     '      "keySentences": [',
-    '        {"jp": "要約から選んだ複雑な文", "zh": "繁體翻譯", "note": "詳細な文法解説と使用上のニュアンス（繁體中文）"},',
-    '        {"jp": "要約から選んだ複雑な文", "zh": "繁體翻譯", "note": "文法解説（繁體中文）"},',
-    '        {"jp": "要約から選んだ複雑な文", "zh": "繁體翻譯", "note": "文法解説（繁體中文）"}',
+    '        {"jp": "ニュースに関連する複雑な文", "zh": "繁體翻譯", "note": "詳細な文法解説（繁體中文）"},',
+    '        {"jp": "複雑な文", "zh": "繁體翻譯", "note": "解説（繁體中文）"},',
+    '        {"jp": "複雑な文", "zh": "繁體翻譯", "note": "解説（繁體中文）"}',
     '      ]',
     '    },',
     '    {',
     '      "category": "urban",',
-    '      "titleJp": "都市再開発に関する実際のニュース見出し",',
+    '      "titleJp": "朝日新聞から取得した都市再開発ニュース見出し",',
     '      "titleZh": "繁體標題",',
-    '      "summaryJp": "5〜6文の詳細要約（約500文字）",',
+    '      "summaryJp": "5〜6文の詳細要約",',
     '      "summaryZh": "繁體摘要",',
-    '      "source": "メディア名",',
+    '      "source": "\u671d\u65e5\u65b0\u805e",',
     '      "vocabulary": [{"word":"","reading":"","meaning":"","example":""},{"word":"","reading":"","meaning":"","example":""},{"word":"","reading":"","meaning":"","example":""},{"word":"","reading":"","meaning":"","example":""},{"word":"","reading":"","meaning":"","example":""}],',
     '      "grammarPoints": [{"pattern":"","meaning":"","example":"","exampleZh":""},{"pattern":"","meaning":"","example":"","exampleZh":""},{"pattern":"","meaning":"","example":"","exampleZh":""}],',
     '      "keySentences": [{"jp":"","zh":"","note":""},{"jp":"","zh":"","note":""},{"jp":"","zh":"","note":""}]',
     '    },',
     '    {',
     '      "category": "realestate",',
-    '      "titleJp": "不動産市場に関する実際のニュース見出し",',
+    '      "titleJp": "SUUMOから取得した不動産市場ニュース見出し",',
     '      "titleZh": "繁體標題",',
-    '      "summaryJp": "5〜6文の詳細要約（約500文字）",',
+    '      "summaryJp": "5〜6文の詳細要約",',
     '      "summaryZh": "繁體摘要",',
-    '      "source": "メディア名",',
+    '      "source": "SUUMO\u30b8\u30e3\u30fc\u30ca\u30eb",',
     '      "vocabulary": [{"word":"","reading":"","meaning":"","example":""},{"word":"","reading":"","meaning":"","example":""},{"word":"","reading":"","meaning":"","example":""},{"word":"","reading":"","meaning":"","example":""},{"word":"","reading":"","meaning":"","example":""}],',
     '      "grammarPoints": [{"pattern":"","meaning":"","example":"","exampleZh":""},{"pattern":"","meaning":"","example":"","exampleZh":""},{"pattern":"","meaning":"","example":"","exampleZh":""}],',
     '      "keySentences": [{"jp":"","zh":"","note":""},{"jp":"","zh":"","note":""},{"jp":"","zh":"","note":""}]',
     '    },',
     '    {',
     '      "category": "economy",',
-    '      "titleJp": "経済に関する実際のニュース見出し",',
+    '      "titleJp": "NHKから取得した経済ニュース見出し",',
     '      "titleZh": "繁體標題",',
-    '      "summaryJp": "5〜6文の詳細要約（約500文字）",',
+    '      "summaryJp": "5〜6文の詳細要約",',
     '      "summaryZh": "繁體摘要",',
-    '      "source": "メディア名",',
+    '      "source": "NHK",',
     '      "vocabulary": [{"word":"","reading":"","meaning":"","example":""},{"word":"","reading":"","meaning":"","example":""},{"word":"","reading":"","meaning":"","example":""},{"word":"","reading":"","meaning":"","example":""},{"word":"","reading":"","meaning":"","example":""}],',
     '      "grammarPoints": [{"pattern":"","meaning":"","example":"","exampleZh":""},{"pattern":"","meaning":"","example":"","exampleZh":""},{"pattern":"","meaning":"","example":"","exampleZh":""}],',
     '      "keySentences": [{"jp":"","zh":"","note":""},{"jp":"","zh":"","note":""},{"jp":"","zh":"","note":""}]',
     '    },',
     '    {',
     '      "category": "agri",',
-    '      "titleJp": "農業に関する実際のニュース見出し",',
+    '      "titleJp": "NHKから取得した農業ニュース見出し",',
     '      "titleZh": "繁體標題",',
-    '      "summaryJp": "5〜6文の詳細要約（約500文字）",',
+    '      "summaryJp": "5〜6文の詳細要約",',
     '      "summaryZh": "繁體摘要",',
-    '      "source": "メディア名",',
+    '      "source": "NHK",',
     '      "vocabulary": [{"word":"","reading":"","meaning":"","example":""},{"word":"","reading":"","meaning":"","example":""},{"word":"","reading":"","meaning":"","example":""},{"word":"","reading":"","meaning":"","example":""},{"word":"","reading":"","meaning":"","example":""}],',
     '      "grammarPoints": [{"pattern":"","meaning":"","example":"","exampleZh":""},{"pattern":"","meaning":"","example":"","exampleZh":""},{"pattern":"","meaning":"","example":"","exampleZh":""}],',
     '      "keySentences": [{"jp":"","zh":"","note":""},{"jp":"","zh":"","note":""},{"jp":"","zh":"","note":""}]',
@@ -170,10 +310,11 @@ function buildPrompt(today) {
     '  ]',
     '}',
     '',
-    'IMPORTANT: Fill ALL fields in ALL 5 articles with complete, high-quality content. Every vocabulary word must be N1 or business level. Every summary must be detailed (~500 Japanese characters). Use Traditional Chinese only.'
+    'IMPORTANT: Fill ALL fields in ALL 5 articles with complete content based on the real news above. Use Traditional Chinese only. Every summary must be ~500 Japanese characters. Every vocabulary word must be N1 or business level.'
   ].join('\n');
 }
 
+// ── JSON クリーン ────────────────────────────────────────────
 function cleanJSON(text) {
   text = text.replace(/^```[a-z]*\n?/gm, '').replace(/\n?```/gm, '').trim();
   const start = text.indexOf('{');
@@ -219,8 +360,7 @@ function cleanArticles(articles) {
   return articles;
 }
 
-// ── Notion ──────────────────────────────────────────────────
-
+// ── Notion ───────────────────────────────────────────────────
 function notionRequest(path, method, payload) {
   const body = JSON.stringify(payload);
   const options = {
@@ -312,15 +452,23 @@ async function pushToNotion(articles, today) {
   }
 }
 
-// ── Main ────────────────────────────────────────────────────
-
+// ── Main ─────────────────────────────────────────────────────
 async function main() {
-  const prompt = buildPrompt(today);
-  let parsed = null;
+  // Step 1: Fetch all RSS feeds in parallel
+  console.log('\nFetching RSS feeds...');
+  const rssItems = {};
+  await Promise.all(categories.map(async (cat) => {
+    rssItems[cat.id] = await fetchRSS(cat);
+  }));
 
+  // Step 2: Build prompt with real news context
+  const prompt = buildPrompt(today, rssItems);
+
+  // Step 3: Call Gemini once with all context
+  let parsed = null;
   for (let attempt = 1; attempt <= 3; attempt++) {
     try {
-      console.log('Calling Gemini API (attempt ' + attempt + '/3)...');
+      console.log('\nCalling Gemini API (attempt ' + attempt + '/3)...');
       const text = await callGemini(prompt);
       console.log('Response length:', text.length);
       parsed = cleanJSON(text);
@@ -339,8 +487,8 @@ async function main() {
   if (!parsed) {
     parsed = {
       date: today,
-      articles: ['tech','urban','realestate','economy','agri'].map(id => ({
-        category: id, titleJp: id, titleZh: '生成失敗',
+      articles: categories.map(cat => ({
+        category: cat.id, titleJp: cat.name, titleZh: '生成失敗',
         summaryJp: 'コンテンツの生成に失敗しました。',
         summaryZh: '內容生成失敗，請稍後再試。',
         source: '', vocabulary: [], grammarPoints: [], keySentences: []
@@ -350,9 +498,11 @@ async function main() {
     parsed.articles = cleanArticles(parsed.articles);
   }
 
+  // Step 4: Save today.json
   fs.writeFileSync('today.json', JSON.stringify(parsed, null, 2), 'utf8');
   console.log('Saved today.json for', today);
 
+  // Step 5: Push to Notion
   if (notionToken && notionDbId) {
     try { await pushToNotion(parsed.articles, today); }
     catch(e) { console.error('Notion push failed:', e.message); }
