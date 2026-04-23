@@ -6,12 +6,12 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="JP学習">
-<meta name="theme-color" content="#e8e4df">
+<meta name="theme-color" content="#ede9e4">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-192.png">
 <title>日本語ニュースで学ぼう</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -20,20 +20,23 @@
   --bg-card:    #f5f2ee;
   --bg-surface: #eceae6;
   --bg-subtle:  #e4e0db;
+  --bg-input:   #f8f6f3;
 
   --text-primary:   #4a4540;
   --text-secondary: #7a7470;
   --text-tertiary:  #a09890;
 
   --border-light:  rgba(120,110,100,0.10);
-  --border-medium: rgba(120,110,100,0.18);
+  --border-medium: rgba(120,110,100,0.20);
 
   --accent-blue:    #8fa8b8;
+  --accent-warm:    #b89880;
   --tab-active-bg:  #4a4540;
   --tab-active-text:#f5f2ee;
 
-  --r1: 8px;
-  --r2: 14px;
+  --r1: 10px;
+  --r2: 16px;
+  --r3: 22px;
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
 }
@@ -44,7 +47,8 @@ body {
   color: var(--text-primary);
   min-height: 100dvh;
   font-size: 17px;
-  padding-bottom: calc(72px + var(--safe-bottom));
+  padding-bottom: calc(76px + var(--safe-bottom));
+  -webkit-tap-highlight-color: transparent;
 }
 
 ruby { ruby-align: center; }
@@ -55,198 +59,308 @@ rt { font-size: 0.52em; color: var(--accent-blue); font-weight: 500; }
   position: sticky; top: 0; z-index: 100;
   background: var(--bg-card);
   border-bottom: 1px solid var(--border-light);
-  padding: calc(10px + var(--safe-top)) 12px 0;
-}
-.topbar-row {
-  display: flex; align-items: center;
-  justify-content: space-between;
-  margin-bottom: 10px; gap: 8px;
+  padding: calc(12px + var(--safe-top)) 16px 12px;
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px;
 }
 .app-title {
-  font-size: 14px; font-weight: 500;
-  color: var(--text-primary);
-  white-space: nowrap; overflow: hidden;
-  text-overflow: ellipsis; flex: 1;
+  font-size: 16px; font-weight: 700;
+  color: var(--text-primary); flex: 1;
 }
-.topbar-actions { display: flex; gap: 6px; flex-shrink: 0; }
 .icon-btn {
-  font-size: 12px; padding: 5px 10px; border-radius: 99px;
+  font-size: 13px; padding: 7px 14px; border-radius: 99px;
   border: 1px solid var(--border-medium);
   background: transparent; color: var(--text-secondary);
   cursor: pointer; font-family: inherit; transition: all 0.15s;
   white-space: nowrap;
 }
+.icon-btn:active { background: var(--bg-subtle); }
 .icon-btn.on {
-  background: var(--tab-active-bg);
-  color: var(--tab-active-text);
+  background: var(--tab-active-bg); color: var(--tab-active-text);
   border-color: var(--tab-active-bg);
 }
 
-/* ── Tabs ── */
-.tabs-wrap {
-  overflow-x: auto; -webkit-overflow-scrolling: touch;
-  scrollbar-width: none; padding-bottom: 10px;
-}
-.tabs-wrap::-webkit-scrollbar { display: none; }
-.tabs { display: flex; gap: 6px; width: max-content; }
-.tab-btn {
-  padding: 6px 14px; border-radius: 99px;
-  border: 1px solid var(--border-medium);
-  background: transparent; font-size: 13px; font-weight: 500;
-  color: var(--text-secondary); cursor: pointer;
-  font-family: inherit; white-space: nowrap; transition: all 0.15s;
-}
-.tab-btn.active {
-  background: var(--tab-active-bg);
-  color: var(--tab-active-text);
-  border-color: var(--tab-active-bg);
-}
-.tab-btn:hover:not(.active) { background: var(--bg-subtle); }
-
-/* ── Main ── */
-.main { padding: 16px; max-width: 700px; margin: 0 auto; }
-
-/* ── Generate button ── */
-.gen-btn {
-  width: 100%; padding: 15px;
-  border-radius: var(--r2);
-  border: 1px solid var(--border-medium);
+/* ── Bottom Nav ── */
+.bottom-nav {
+  position: fixed; bottom: 0; left: 0; right: 0; z-index: 100;
   background: var(--bg-card);
-  font-size: 16px; font-weight: 500;
-  color: var(--text-primary);
-  cursor: pointer; font-family: inherit;
-  margin-bottom: 12px; transition: all 0.15s;
+  border-top: 1px solid var(--border-light);
+  display: flex;
+  padding-bottom: var(--safe-bottom);
 }
-.gen-btn:active { transform: scale(0.99); background: var(--bg-subtle); }
-.gen-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.nav-btn {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; gap: 3px;
+  padding: 10px 8px 12px;
+  border: none; background: transparent;
+  color: var(--text-tertiary); cursor: pointer;
+  font-family: inherit; transition: all 0.15s;
+}
+.nav-btn .nav-icon { font-size: 22px; }
+.nav-btn .nav-label { font-size: 11px; font-weight: 500; }
+.nav-btn.active { color: var(--tab-active-bg); }
+.nav-btn.active .nav-label { font-weight: 700; }
 
-/* ── Status bar ── */
+/* ── Views ── */
+.view { display: none; }
+.view.active { display: block; }
+.main { max-width: 700px; margin: 0 auto; padding: 20px 16px; }
+
+/* ── Input View ── */
+.input-section { margin-bottom: 16px; }
+.section-title {
+  font-size: 13px; font-weight: 700; letter-spacing: 0.08em;
+  color: var(--text-tertiary); text-transform: uppercase;
+  margin-bottom: 10px;
+}
+.news-textarea {
+  width: 100%; min-height: 220px;
+  padding: 16px; border-radius: var(--r2);
+  border: 1.5px solid var(--border-medium);
+  background: var(--bg-input); color: var(--text-primary);
+  font-size: 16px; font-family: inherit; line-height: 1.8;
+  resize: vertical; outline: none; transition: border-color 0.2s;
+}
+.news-textarea:focus { border-color: var(--accent-blue); }
+.news-textarea::placeholder { color: var(--text-tertiary); }
+
+.char-count {
+  font-size: 12px; color: var(--text-tertiary);
+  text-align: right; margin-top: 6px;
+}
+
+.submit-btn {
+  width: 100%; padding: 18px;
+  border-radius: var(--r2);
+  border: none;
+  background: var(--tab-active-bg);
+  color: var(--tab-active-text);
+  font-size: 17px; font-weight: 700;
+  cursor: pointer; font-family: inherit;
+  transition: all 0.2s; margin-top: 12px;
+  letter-spacing: 0.05em;
+}
+.submit-btn:active { transform: scale(0.98); opacity: 0.9; }
+.submit-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+/* ── Status ── */
 .status-bar {
-  font-size: 14px; color: var(--text-secondary);
-  text-align: center; padding: 10px 12px;
-  margin-bottom: 12px; background: var(--bg-surface);
+  font-size: 15px; color: var(--text-secondary);
+  text-align: center; padding: 14px 16px;
+  margin-top: 14px; background: var(--bg-surface);
   border-radius: var(--r1); border: 1px solid var(--border-light);
-  display: none; line-height: 1.5;
+  display: none; line-height: 1.6;
 }
 .status-bar.visible { display: block; }
+.status-bar.error { color: #a06050; background: #f5eeeb; border-color: rgba(160,96,80,0.2); }
+.status-bar.success { color: #507060; background: #edf3ee; border-color: rgba(80,112,96,0.2); }
 
-/* ── News card ── */
+/* ── Spinner ── */
+.spinner {
+  display: inline-block; width: 18px; height: 18px;
+  border: 2px solid rgba(74,69,64,0.2);
+  border-top-color: var(--tab-active-bg);
+  border-radius: 50%; animation: spin 0.7s linear infinite;
+  vertical-align: middle; margin-right: 8px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Result ── */
+.result-wrap { margin-top: 24px; }
+.result-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 14px;
+}
+.result-header-title {
+  font-size: 13px; font-weight: 700; letter-spacing: 0.08em;
+  color: var(--text-tertiary); text-transform: uppercase;
+}
+.notion-badge {
+  font-size: 12px; padding: 4px 10px; border-radius: 99px;
+  border: 1px solid var(--border-medium); color: var(--text-tertiary);
+  background: var(--bg-surface);
+}
+.notion-badge.saved { border-color: #8fae9a; color: #507060; background: #edf3ee; }
+.notion-badge.failed { border-color: #c0a090; color: #907060; background: #f5eeeb; }
+
+/* ── News Card ── */
 .news-card {
   background: var(--bg-card);
   border: 1px solid var(--border-light);
-  border-radius: var(--r2); margin-bottom: 16px; overflow: hidden;
+  border-radius: var(--r3); overflow: hidden;
+  box-shadow: 0 2px 12px rgba(74,69,64,0.06);
 }
-.card-header { padding: 16px 18px 14px; border-bottom: 1px solid var(--border-light); }
-.badge-row { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
-.badge {
-  font-size: 12px; font-weight: 500;
-  padding: 4px 12px; border-radius: 99px; white-space: nowrap;
+.card-header {
+  padding: 20px 20px 16px;
+  border-bottom: 1px solid var(--border-light);
 }
-.badge-tech       { background: #dde8f0; color: #5a7a90; }
-.badge-urban      { background: #e8ead8; color: #6a7a50; }
-.badge-realestate { background: #f0e8e0; color: #907060; }
-.badge-economy    { background: #e8e0f0; color: #706090; }
-.badge-agri       { background: #dceadc; color: #507050; }
-
-.card-title { font-size: 18px; font-weight: 500; line-height: 1.6; color: var(--text-primary); }
-.card-meta { font-size: 13px; color: var(--text-tertiary); margin-top: 6px; }
-.card-body { padding: 16px 18px; }
+.card-date {
+  font-size: 12px; color: var(--text-tertiary);
+  font-weight: 500; margin-bottom: 10px;
+}
+.card-title-jp {
+  font-size: 20px; font-weight: 700; line-height: 1.6;
+  color: var(--text-primary); margin-bottom: 6px;
+}
+.card-title-zh {
+  font-size: 15px; color: var(--text-secondary); line-height: 1.6;
+}
+.card-body { padding: 20px; }
 
 .section-lbl {
-  font-size: 11px; font-weight: 500; letter-spacing: 0.1em;
+  font-size: 11px; font-weight: 700; letter-spacing: 0.12em;
   text-transform: uppercase; color: var(--text-tertiary);
-  margin-top: 20px; margin-bottom: 10px;
+  margin-top: 24px; margin-bottom: 12px;
+  display: flex; align-items: center; gap: 6px;
+}
+.section-lbl::before {
+  content: ''; display: block;
+  width: 3px; height: 14px; border-radius: 2px;
+  background: var(--accent-blue);
 }
 .section-lbl:first-child { margin-top: 0; }
 
-.summary { font-size: 16px; line-height: 1.9; color: var(--text-primary); }
+.summary-jp {
+  font-size: 17px; line-height: 2.0; color: var(--text-primary);
+}
 .summary-zh {
-  font-size: 15px; line-height: 1.8; color: var(--text-secondary);
-  margin-top: 10px; padding-top: 10px;
+  font-size: 16px; line-height: 1.9; color: var(--text-secondary);
+  margin-top: 12px; padding-top: 12px;
   border-top: 1px solid var(--border-light);
 }
 
-/* ── Vocab grid ── */
+/* ── Vocab ── */
 .vocab-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 @media (min-width: 500px) { .vocab-grid { grid-template-columns: repeat(3, 1fr); } }
 
 .vocab-item {
   background: var(--bg-surface); border-radius: var(--r1);
-  padding: 12px 14px; border: 1px solid var(--border-light);
+  padding: 14px 16px; border: 1px solid var(--border-light);
 }
-.vocab-word { font-size: 20px; font-weight: 500; color: var(--text-primary); }
-.vocab-meaning { font-size: 14px; color: var(--text-secondary); margin-top: 5px; }
-.vocab-ex { font-size: 13px; color: var(--text-tertiary); margin-top: 5px; line-height: 1.7; }
+.vocab-word { font-size: 21px; font-weight: 700; color: var(--text-primary); line-height: 1.5; }
+.vocab-meaning { font-size: 14px; color: var(--text-secondary); margin-top: 6px; }
+.vocab-ex { font-size: 13px; color: var(--text-tertiary); margin-top: 6px; line-height: 1.8; }
 
 /* ── Grammar ── */
 .grammar-item {
-  border-left: 2px solid var(--accent-blue);
-  padding: 12px 14px; margin-bottom: 10px;
+  border-left: 3px solid var(--accent-blue);
+  padding: 14px 16px; margin-bottom: 12px;
   background: var(--bg-surface);
   border-radius: 0 var(--r1) var(--r1) 0;
 }
 .grammar-item:last-child { margin-bottom: 0; }
-.grammar-pat { font-size: 16px; font-weight: 500; color: var(--text-primary); }
-.grammar-meaning { font-size: 14px; color: var(--text-secondary); margin-top: 3px; }
-.grammar-ex { font-size: 15px; color: var(--text-primary); margin-top: 8px; line-height: 1.85; }
-.grammar-ex-zh { font-size: 14px; color: var(--text-tertiary); margin-top: 3px; }
+.grammar-pat { font-size: 17px; font-weight: 700; color: var(--text-primary); }
+.grammar-meaning { font-size: 14px; color: var(--text-secondary); margin-top: 4px; }
+.grammar-ex { font-size: 16px; color: var(--text-primary); margin-top: 10px; line-height: 1.9; }
+.grammar-ex-zh { font-size: 14px; color: var(--text-tertiary); margin-top: 4px; line-height: 1.7; }
 
-/* ── Key sentences ── */
+/* ── Key Sentences ── */
 .sent-item {
-  padding-bottom: 16px; margin-bottom: 16px;
+  padding-bottom: 18px; margin-bottom: 18px;
   border-bottom: 1px solid var(--border-light);
 }
 .sent-item:last-child { border-bottom: none; padding-bottom: 0; margin-bottom: 0; }
-.sent-jp { font-size: 16px; line-height: 1.9; color: var(--text-primary); }
-.sent-zh { font-size: 15px; color: var(--text-secondary); margin-top: 5px; line-height: 1.7; }
+.sent-jp { font-size: 17px; line-height: 2.0; color: var(--text-primary); }
+.sent-zh { font-size: 16px; color: var(--text-secondary); margin-top: 6px; line-height: 1.8; }
 .sent-note {
-  font-size: 13px; color: var(--text-tertiary); margin-top: 6px;
-  background: var(--bg-surface); padding: 8px 12px; border-radius: var(--r1);
-  line-height: 1.7;
+  font-size: 14px; color: var(--text-tertiary); margin-top: 8px;
+  background: var(--bg-surface); padding: 10px 14px;
+  border-radius: var(--r1); line-height: 1.8;
 }
 
-/* ── States ── */
-.empty-state {
+/* ── Library ── */
+.library-empty {
   text-align: center; padding: 4rem 1rem;
   background: var(--bg-card); border-radius: var(--r2);
   border: 1px dashed var(--border-medium);
-  color: var(--text-secondary); font-size: 15px;
+  color: var(--text-secondary); font-size: 16px;
 }
-.empty-icon { font-size: 36px; margin-bottom: 14px; }
-.date-row { text-align: right; font-size: 13px; color: var(--text-tertiary); margin-bottom: 12px; }
+.library-empty-icon { font-size: 40px; margin-bottom: 16px; }
+
+.library-item {
+  background: var(--bg-card);
+  border: 1px solid var(--border-light);
+  border-radius: var(--r2); margin-bottom: 12px;
+  cursor: pointer; overflow: hidden;
+  transition: box-shadow 0.2s;
+}
+.library-item:active { background: var(--bg-surface); }
+.library-item-header {
+  padding: 16px 18px;
+  display: flex; align-items: flex-start;
+  justify-content: space-between; gap: 12px;
+}
+.library-item-title {
+  font-size: 16px; font-weight: 700; color: var(--text-primary);
+  line-height: 1.6; flex: 1;
+}
+.library-item-meta {
+  font-size: 13px; color: var(--text-tertiary);
+  margin-top: 4px; line-height: 1.5;
+}
+.library-expand-icon {
+  font-size: 18px; color: var(--text-tertiary);
+  flex-shrink: 0; margin-top: 2px;
+  transition: transform 0.2s;
+}
+.library-item.open .library-expand-icon { transform: rotate(180deg); }
+.library-detail { display: none; border-top: 1px solid var(--border-light); }
+.library-item.open .library-detail { display: block; }
 
 /* ── Modal ── */
 .modal-overlay {
   display: none; position: fixed; inset: 0;
-  background: rgba(74,69,64,0.4); z-index: 200;
+  background: rgba(74,69,64,0.45); z-index: 200;
   align-items: flex-end; justify-content: center;
+  backdrop-filter: blur(2px);
 }
 .modal-overlay.open { display: flex; }
 .modal {
   background: var(--bg-card);
-  border-radius: var(--r2) var(--r2) 0 0;
-  padding: 26px 20px calc(26px + var(--safe-bottom));
-  width: 100%; max-width: 500px;
+  border-radius: var(--r3) var(--r3) 0 0;
+  padding: 28px 22px calc(28px + var(--safe-bottom));
+  width: 100%; max-width: 520px;
+  max-height: 90dvh; overflow-y: auto;
 }
-.modal h3 { font-size: 18px; font-weight: 500; margin-bottom: 8px; color: var(--text-primary); }
-.modal p { font-size: 14px; color: var(--text-secondary); margin-bottom: 18px; line-height: 1.6; }
-.modal-field { margin-bottom: 16px; }
-.modal-field label { display: block; font-size: 13px; color: var(--text-tertiary); margin-bottom: 6px; }
+.modal-handle {
+  width: 36px; height: 4px; border-radius: 2px;
+  background: var(--border-medium); margin: 0 auto 20px;
+}
+.modal h3 {
+  font-size: 20px; font-weight: 700; margin-bottom: 8px;
+  color: var(--text-primary);
+}
+.modal-desc {
+  font-size: 14px; color: var(--text-secondary);
+  margin-bottom: 22px; line-height: 1.7;
+}
+.modal-field { margin-bottom: 18px; }
+.modal-field label {
+  display: block; font-size: 13px; font-weight: 700;
+  color: var(--text-secondary); margin-bottom: 7px;
+}
 .modal-field input {
-  width: 100%; padding: 11px 14px; border-radius: var(--r1);
-  border: 1px solid var(--border-medium);
+  width: 100%; padding: 13px 16px; border-radius: var(--r1);
+  border: 1.5px solid var(--border-medium);
   background: var(--bg-surface); color: var(--text-primary);
-  font-size: 15px; font-family: inherit;
+  font-size: 15px; font-family: inherit; outline: none;
+  transition: border-color 0.2s;
 }
-.hint { font-size: 12px; color: var(--text-tertiary); margin-top: 6px; line-height: 1.6; }
+.modal-field input:focus { border-color: var(--accent-blue); }
+.hint {
+  font-size: 12px; color: var(--text-tertiary); margin-top: 7px;
+  line-height: 1.7;
+}
 .modal-btn {
-  width: 100%; padding: 14px; border-radius: var(--r1);
+  width: 100%; padding: 16px; border-radius: var(--r1);
   border: none; background: var(--tab-active-bg);
-  color: var(--tab-active-text); font-size: 16px; font-weight: 500;
+  color: var(--tab-active-text); font-size: 17px; font-weight: 700;
   cursor: pointer; font-family: inherit; margin-bottom: 10px;
+  transition: opacity 0.15s;
 }
+.modal-btn:active { opacity: 0.85; }
 .modal-cancel {
-  width: 100%; padding: 12px; border-radius: var(--r1);
+  width: 100%; padding: 14px; border-radius: var(--r1);
   border: 1px solid var(--border-medium); background: transparent;
   color: var(--text-secondary); font-size: 15px;
   cursor: pointer; font-family: inherit;
@@ -255,295 +369,490 @@ rt { font-size: 0.52em; color: var(--accent-blue); font-weight: 500; }
 </head>
 <body>
 
+<!-- Topbar -->
 <div class="topbar">
-  <div class="topbar-row">
-    <span class="app-title">📰 日本語ニュースで学ぼう</span>
-    <div class="topbar-actions">
-      <button class="icon-btn" id="notifyBtn" onclick="openModal('notifyModal')">🔔 通知</button>
-      <button class="icon-btn" id="settingsBtn" onclick="openModal('settingsModal')">⚙ 設定</button>
-    </div>
-  </div>
-  <div class="tabs-wrap">
-    <div class="tabs">
-      <button class="tab-btn active" onclick="switchTab('all')">すべて</button>
-      <button class="tab-btn" onclick="switchTab('tech')">テクノロジー</button>
-      <button class="tab-btn" onclick="switchTab('urban')">都市再開発</button>
-      <button class="tab-btn" onclick="switchTab('realestate')">不動産市場</button>
-      <button class="tab-btn" onclick="switchTab('economy')">経済</button>
-      <button class="tab-btn" onclick="switchTab('agri')">農業</button>
-    </div>
-  </div>
+  <span class="app-title">📰 日本語ニュース学習</span>
+  <button class="icon-btn" id="settingsBtn" onclick="openModal('settingsModal')">⚙ 設定</button>
 </div>
 
+<!-- Main -->
 <div class="main">
-  <button class="gen-btn" id="genBtn" onclick="triggerGenerate()">✦ 今日のニュースを生成する</button>
-  <div class="status-bar" id="statusBar"></div>
-  <div id="output">
-    <div class="empty-state">
-      <div class="empty-icon">📰</div>
-      <div>ボタンをタップして今日の学習コンテンツを生成してください</div>
+
+  <!-- ── 入力ビュー ── -->
+  <div id="view-input" class="view active">
+    <div class="input-section">
+      <div class="section-title">ニュース本文を貼り付ける</div>
+      <textarea
+        class="news-textarea"
+        id="newsInput"
+        placeholder="日本語ニュースの本文をここに貼り付けてください。&#10;&#10;貼り付けた後、「学習コンテンツを生成する」ボタンをタップしてください。"
+        oninput="updateCharCount()"
+      ></textarea>
+      <div class="char-count" id="charCount">0 文字</div>
+      <button class="submit-btn" id="submitBtn" onclick="generateLearning()">
+        ✦ 学習コンテンツを生成する
+      </button>
     </div>
+    <div class="status-bar" id="statusBar"></div>
+    <div id="resultContainer"></div>
   </div>
+
+  <!-- ── 學習庫ビュー ── -->
+  <div id="view-library" class="view">
+    <div id="libraryContainer"></div>
+  </div>
+
 </div>
 
-<!-- Notify Modal -->
-<div class="modal-overlay" id="notifyModal" onclick="closeIfOutside(event,'notifyModal')">
-  <div class="modal">
-    <h3>毎日通知を設定する</h3>
-    <p>設定した時刻に学習リマインダーをお知らせします。</p>
-    <div class="modal-field">
-      <label>通知時刻</label>
-      <input type="time" id="notifyTime" value="07:50">
-    </div>
-    <button class="modal-btn" onclick="saveNotification()">通知を有効にする</button>
-    <button class="modal-cancel" onclick="closeModal('notifyModal')">キャンセル</button>
-  </div>
-</div>
+<!-- Bottom Nav -->
+<nav class="bottom-nav">
+  <button class="nav-btn active" id="nav-input" onclick="switchView('input')">
+    <span class="nav-icon">✏️</span>
+    <span class="nav-label">新增</span>
+  </button>
+  <button class="nav-btn" id="nav-library" onclick="switchView('library')">
+    <span class="nav-icon">📚</span>
+    <span class="nav-label">學習庫</span>
+  </button>
+</nav>
 
 <!-- Settings Modal -->
 <div class="modal-overlay" id="settingsModal" onclick="closeIfOutside(event,'settingsModal')">
   <div class="modal">
-    <h3>GitHub 設定</h3>
-    <p>ボタンで即時生成するために必要です。一度設定すれば保存されます。</p>
+    <div class="modal-handle"></div>
+    <h3>⚙ API 設定</h3>
+    <p class="modal-desc">設定を一度入力すれば端末に保存されます。サーバーには送信されません。</p>
+
     <div class="modal-field">
-      <label>GitHub ユーザー名</label>
-      <input type="text" id="ghUser" placeholder="例：your-username">
+      <label>Gemini API Key</label>
+      <input type="password" id="geminiKey" placeholder="AIzaSy...">
+      <div class="hint">Google AI Studio（aistudio.google.com）で取得。無料で利用可能。</div>
     </div>
+
     <div class="modal-field">
-      <label>Repository 名</label>
-      <input type="text" id="ghRepo" placeholder="例：japanese-news-learning">
+      <label>Notion Integration Token</label>
+      <input type="password" id="notionToken" placeholder="secret_...">
+      <div class="hint">Notion → 設定 → API インテグレーション → 内部インテグレーションを作成</div>
     </div>
+
     <div class="modal-field">
-      <label>Personal Access Token</label>
-      <input type="password" id="ghToken" placeholder="ghp_xxxxxxxxxxxx">
-      <div class="hint">Settings → Developer settings → Personal access tokens → Tokens (classic)<br>権限：repo ＋ workflow にチェック</div>
+      <label>Notion データベース ID</label>
+      <input type="text" id="notionDbId" placeholder="xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx">
+      <div class="hint">データベースページの URL から取得。例：notion.so/[DB-ID]?v=...</div>
     </div>
+
     <button class="modal-btn" onclick="saveSettings()">保存する</button>
     <button class="modal-cancel" onclick="closeModal('settingsModal')">キャンセル</button>
   </div>
 </div>
 
 <script>
-const CATS = ['all','tech','urban','realestate','economy','agri'];
-const BADGE = {
-  tech:        ['badge-tech',        'テクノロジー'],
-  urban:       ['badge-urban',       '都市再開発'],
-  realestate:  ['badge-realestate',  '不動産市場'],
-  economy:     ['badge-economy',     '経済'],
-  agri:        ['badge-agri',        '農業']
-};
-let currentTab = 'all';
-let generatedData = null;
-let pollTimer = null;
+// ── 定数 ─────────────────────────────────────────────────────
+const GEMINI_ENDPOINT = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent';
+const NOTION_PROXY    = 'https://corsproxy.io/?url=';
+const NOTION_API      = 'https://api.notion.com/v1/pages';
+const LIBRARY_KEY     = 'jp_news_library';
 
+// ── 初期化 ────────────────────────────────────────────────────
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('./sw.js').then(reg => {
-    const saved = localStorage.getItem('notifyTime');
-    if (saved && Notification.permission === 'granted') {
-      const [h, m] = saved.split(':').map(Number);
-      if (reg.active) reg.active.postMessage({ type: 'SCHEDULE_DAILY', hour: h, minute: m });
-    }
-  });
+  navigator.serviceWorker.register('./sw.js').catch(() => {});
 }
 
 window.addEventListener('load', () => {
-  const t = localStorage.getItem('notifyTime');
-  if (t) {
-    document.getElementById('notifyTime').value = t;
-    document.getElementById('notifyBtn').classList.add('on');
-    document.getElementById('notifyBtn').textContent = '🔔 ' + t;
+  loadSettingsToForm();
+  if (localStorage.getItem('geminiKey')) {
+    document.getElementById('settingsBtn').classList.add('on');
   }
-  const u = localStorage.getItem('ghUser');
-  const r = localStorage.getItem('ghRepo');
-  const tok = localStorage.getItem('ghToken');
-  if (u) document.getElementById('ghUser').value = u;
-  if (r) document.getElementById('ghRepo').value = r;
-  if (tok) document.getElementById('ghToken').value = tok;
-  if (u && r && tok) document.getElementById('settingsBtn').classList.add('on');
-  loadExistingNews();
 });
 
-async function loadExistingNews() {
+// ── View 切り替え ─────────────────────────────────────────────
+function switchView(name) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('view-' + name).classList.add('active');
+  document.getElementById('nav-' + name).classList.add('active');
+  if (name === 'library') renderLibrary();
+}
+
+// ── 文字数カウント ────────────────────────────────────────────
+function updateCharCount() {
+  const len = document.getElementById('newsInput').value.length;
+  document.getElementById('charCount').textContent = len.toLocaleString() + ' 文字';
+}
+
+// ── Status ───────────────────────────────────────────────────
+function showStatus(msg, type = '') {
+  const bar = document.getElementById('statusBar');
+  bar.innerHTML = msg;
+  bar.className = 'status-bar visible' + (type ? ' ' + type : '');
+}
+function hideStatus() {
+  document.getElementById('statusBar').className = 'status-bar';
+}
+
+// ── 生成メイン ────────────────────────────────────────────────
+async function generateLearning() {
+  const text = document.getElementById('newsInput').value.trim();
+  if (!text) { showStatus('⚠️ ニュース本文を貼り付けてください。', 'error'); return; }
+  if (text.length < 100) { showStatus('⚠️ ニュース本文が短すぎます。100文字以上の記事を貼り付けてください。', 'error'); return; }
+
+  const geminiKey = localStorage.getItem('geminiKey');
+  if (!geminiKey) {
+    showStatus('⚙ 先に Gemini API Key を設定してください。', 'error');
+    openModal('settingsModal');
+    return;
+  }
+
+  const btn = document.getElementById('submitBtn');
+  btn.disabled = true;
+  document.getElementById('resultContainer').innerHTML = '';
+  showStatus('<span class="spinner"></span>Gemini AI が学習コンテンツを生成中です…（約15〜30秒）');
+
   try {
-    const res = await fetch('./today.json?t=' + Date.now());
-    if (res.ok) {
-      const data = await res.json();
-      generatedData = data;
-      renderCards(data);
-      document.getElementById('genBtn').textContent = '✦ 再度生成する（最新に更新）';
+    const article = await callGemini(text, geminiKey);
+    article.date = new Date().toLocaleDateString('ja-JP', { year: 'numeric', month: 'long', day: 'numeric' });
+    article.savedAt = Date.now();
+    article.textPreview = text.slice(0, 200);
+
+    renderResult(article);
+    saveToLibrary(article);
+
+    showStatus('✅ 生成完了！学習コンテンツを表示しました。', 'success');
+    setTimeout(hideStatus, 3000);
+
+    // Notion に保存（バックグラウンド）
+    saveToNotion(article);
+
+  } catch(e) {
+    showStatus('❌ 生成失敗：' + e.message, 'error');
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+// ── Gemini API 呼び出し ───────────────────────────────────────
+async function callGemini(newsText, apiKey) {
+  const prompt = buildPrompt(newsText);
+  const body = {
+    contents: [{ parts: [{ text: prompt }] }],
+    generationConfig: {
+      temperature: 0.3,
+      maxOutputTokens: 8192,
+      responseMimeType: 'application/json'
     }
-  } catch(e) {}
-}
+  };
 
-function switchTab(tab) {
-  currentTab = tab;
-  document.querySelectorAll('.tab-btn').forEach((btn, i) => {
-    btn.classList.toggle('active', CATS[i] === tab);
+  const res = await fetch(GEMINI_ENDPOINT + '?key=' + apiKey, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
   });
-  if (generatedData) renderCards(generatedData);
+
+  const data = await res.json();
+  if (data.error) throw new Error(data.error.message || 'Gemini API error');
+
+  const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+  if (!rawText) throw new Error('Gemini から空のレスポンスが返されました');
+
+  const cleaned = rawText.replace(/[\x00-\x08\x0b-\x0c\x0e-\x1f\x7f]/g, '');
+  try {
+    return JSON.parse(cleaned);
+  } catch(e) {
+    const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
+    if (jsonMatch) return JSON.parse(jsonMatch[0]);
+    throw new Error('JSON 解析失敗：' + e.message);
+  }
 }
 
-function openModal(id) { document.getElementById(id).classList.add('open'); }
-function closeModal(id) { document.getElementById(id).classList.remove('open'); }
-function closeIfOutside(e, id) { if (e.target === document.getElementById(id)) closeModal(id); }
+// ── プロンプト ────────────────────────────────────────────────
+function buildPrompt(newsText) {
+  return `以下の日本語ニュース記事を分析し、日本語学習コンテンツをJSON形式で生成してください。
 
-async function saveNotification() {
-  const t = document.getElementById('notifyTime').value;
-  if (!('Notification' in window)) { alert('このブラウザは通知をサポートしていません。'); return; }
-  const perm = await Notification.requestPermission();
-  if (perm !== 'granted') { alert('通知が許可されませんでした。'); return; }
-  localStorage.setItem('notifyTime', t);
-  const [h, m] = t.split(':').map(Number);
-  const reg = await navigator.serviceWorker.ready;
-  if (reg.active) reg.active.postMessage({ type: 'SCHEDULE_DAILY', hour: h, minute: m });
-  document.getElementById('notifyBtn').classList.add('on');
-  document.getElementById('notifyBtn').textContent = '🔔 ' + t;
-  closeModal('notifyModal');
+【ニュース本文】
+${newsText}
+
+以下のJSON形式で出力してください（他のテキストは不要、JSONのみ）：
+
+{
+  "titleJp": "記事の見出し（日本語、簡潔に）",
+  "titleZh": "標題（繁體中文，必ず繁體中文を使用、簡体字禁止）",
+  "summaryJp": "要約（日本語、約500文字、記事の重要なポイントを網羅）",
+  "summaryZh": "摘要（繁體中文，約500字，必ず繁體中文を使用、簡体字禁止）",
+  "vocabulary": [
+    {
+      "word": "<ruby>単語<rt>よみ</rt></ruby>",
+      "meaning": "意味・用法（繁體中文）",
+      "example": "記事から引用または関連例文（日本語）"
+    }
+  ],
+  "grammarPoints": [
+    {
+      "pattern": "文法パターン（例：〜に伴い、〜を踏まえ）",
+      "meaning": "意味・用法の説明（繁體中文）",
+      "example": "記事から引用または関連例文（日本語）",
+      "exampleZh": "例文の訳（繁體中文）"
+    }
+  ],
+  "keySentences": [
+    {
+      "jp": "記事中の重要な文（日本語原文）",
+      "zh": "翻訳（繁體中文）",
+      "note": "なぜ重要か、表現の解説（繁體中文）"
+    }
+  ]
 }
 
+要件：
+- vocabulary は必ず5個、N1〜ビジネスレベルの重要語彙を選ぶこと
+- grammarPoints は必ず3個、記事中に使われている文法・表現を選ぶこと
+- keySentences は必ず3個、記事の核心を表す文を選ぶこと
+- 中文（titleZh, summaryZh, meaning, exampleZh, zh, note）は必ず繁體中文を使用（簡体字・日本語混じりは禁止）
+- word フィールドは <ruby>漢字<rt>よみ</rt></ruby> 形式で記述すること
+- JSONのみ出力、前後に説明テキスト不要`;
+}
+
+// ── 結果表示 ──────────────────────────────────────────────────
+function renderResult(article) {
+  const html = buildCardHTML(article, true);
+  document.getElementById('resultContainer').innerHTML =
+    '<div class="result-wrap">' +
+      '<div class="result-header">' +
+        '<div class="result-header-title">生成結果</div>' +
+        '<span class="notion-badge" id="notionBadge">Notion 保存中…</span>' +
+      '</div>' +
+      html +
+    '</div>';
+  document.getElementById('resultContainer').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// ── カードHTML生成 ────────────────────────────────────────────
+function buildCardHTML(article, showFull) {
+  const vocabHtml = (article.vocabulary || []).map(v =>
+    '<div class="vocab-item">' +
+      '<div class="vocab-word">' + (v.word || '') + '</div>' +
+      '<div class="vocab-meaning">' + esc(v.meaning || '') + '</div>' +
+      '<div class="vocab-ex">例：' + esc(v.example || '') + '</div>' +
+    '</div>'
+  ).join('');
+
+  const gramHtml = (article.grammarPoints || []).map(g =>
+    '<div class="grammar-item">' +
+      '<div class="grammar-pat">' + esc(g.pattern || '') + '</div>' +
+      '<div class="grammar-meaning">' + esc(g.meaning || '') + '</div>' +
+      '<div class="grammar-ex">' + esc(g.example || '') + '</div>' +
+      '<div class="grammar-ex-zh">' + esc(g.exampleZh || '') + '</div>' +
+    '</div>'
+  ).join('');
+
+  const sentHtml = (article.keySentences || []).map(s =>
+    '<div class="sent-item">' +
+      '<div class="sent-jp">' + esc(s.jp || '') + '</div>' +
+      '<div class="sent-zh">' + esc(s.zh || '') + '</div>' +
+      '<div class="sent-note">📌 ' + esc(s.note || '') + '</div>' +
+    '</div>'
+  ).join('');
+
+  return '<div class="news-card">' +
+    '<div class="card-header">' +
+      '<div class="card-date">' + esc(article.date || '') + '</div>' +
+      '<div class="card-title-jp">' + esc(article.titleJp || '') + '</div>' +
+      '<div class="card-title-zh">' + esc(article.titleZh || '') + '</div>' +
+    '</div>' +
+    '<div class="card-body">' +
+      '<div class="section-lbl">ニュース要約</div>' +
+      '<div class="summary-jp">' + esc(article.summaryJp || '') + '</div>' +
+      '<div class="summary-zh">' + esc(article.summaryZh || '') + '</div>' +
+      (vocabHtml ? '<div class="section-lbl">重要単語</div><div class="vocab-grid">' + vocabHtml + '</div>' : '') +
+      (gramHtml  ? '<div class="section-lbl">文法・表現</div>' + gramHtml : '') +
+      (sentHtml  ? '<div class="section-lbl">キーセンテンス</div>' + sentHtml : '') +
+    '</div>' +
+  '</div>';
+}
+
+// HTML エスケープ（ruby タグは許可）
+function esc(str) {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/&lt;ruby&gt;/g, '<ruby>').replace(/&lt;\/ruby&gt;/g, '</ruby>')
+    .replace(/&lt;rt&gt;/g, '<rt>').replace(/&lt;\/rt&gt;/g, '</rt>');
+}
+
+// ── localStorage ──────────────────────────────────────────────
+function saveToLibrary(article) {
+  const lib = getLibrary();
+  lib.unshift(article);
+  if (lib.length > 200) lib.pop();
+  localStorage.setItem(LIBRARY_KEY, JSON.stringify(lib));
+}
+
+function getLibrary() {
+  try { return JSON.parse(localStorage.getItem(LIBRARY_KEY) || '[]'); }
+  catch(e) { return []; }
+}
+
+// ── 學習庫表示 ────────────────────────────────────────────────
+function renderLibrary() {
+  const lib = getLibrary();
+  const container = document.getElementById('libraryContainer');
+  if (!lib.length) {
+    container.innerHTML =
+      '<div class="library-empty">' +
+        '<div class="library-empty-icon">📚</div>' +
+        '<div>まだ記事がありません。<br>「新增」タブでニュースを生成してください。</div>' +
+      '</div>';
+    return;
+  }
+  container.innerHTML = lib.map((a, i) =>
+    '<div class="library-item" id="lib-' + i + '">' +
+      '<div class="library-item-header" onclick="toggleLibraryItem(' + i + ')">' +
+        '<div>' +
+          '<div class="library-item-title">' + esc(a.titleJp || '（タイトル不明）') + '</div>' +
+          '<div class="library-item-meta">' + esc(a.date || '') + '　' + esc(a.titleZh || '') + '</div>' +
+        '</div>' +
+        '<span class="library-expand-icon">▾</span>' +
+      '</div>' +
+      '<div class="library-detail">' + buildCardHTML(a, true) + '</div>' +
+    '</div>'
+  ).join('');
+}
+
+function toggleLibraryItem(i) {
+  const el = document.getElementById('lib-' + i);
+  el.classList.toggle('open');
+}
+
+// ── Notion 保存 ───────────────────────────────────────────────
+async function saveToNotion(article) {
+  const badge = document.getElementById('notionBadge');
+  const token = localStorage.getItem('notionToken');
+  const dbId  = localStorage.getItem('notionDbId');
+
+  if (!token || !dbId) {
+    if (badge) { badge.textContent = 'Notion 未設定'; }
+    return;
+  }
+
+  try {
+    const payload = buildNotionPayload(article, dbId);
+    const url = NOTION_PROXY + encodeURIComponent(NOTION_API);
+
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Authorization': 'Bearer ' + token,
+        'Notion-Version': '2022-06-28',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(payload)
+    });
+
+    if (res.ok) {
+      if (badge) { badge.textContent = '✓ Notion 保存済み'; badge.className = 'notion-badge saved'; }
+    } else {
+      const err = await res.json().catch(() => ({}));
+      throw new Error((err.message || res.status));
+    }
+  } catch(e) {
+    if (badge) { badge.textContent = 'Notion 保存失敗'; badge.className = 'notion-badge failed'; badge.title = e.message; }
+    console.warn('Notion save failed:', e.message);
+  }
+}
+
+function rt(text) {
+  return [{ type: 'text', text: { content: String(text).slice(0, 2000) } }];
+}
+function h2(text) { return { object: 'block', type: 'heading_2', heading_2: { rich_text: rt(text) } }; }
+function h3(text) { return { object: 'block', type: 'heading_3', heading_3: { rich_text: rt(text) } }; }
+function p(text)  { return { object: 'block', type: 'paragraph',  paragraph:  { rich_text: rt(text) } }; }
+function hr()     { return { object: 'block', type: 'divider',    divider:    {} }; }
+
+function buildNotionPayload(article, dbId) {
+  const cleanDbId = dbId.replace(/-/g, '').replace(/\?.*$/, '');
+  const title = (article.date || '') + ' ' + (article.titleJp || '（無題）');
+  const blocks = [];
+
+  blocks.push(p(article.titleZh || ''));
+  blocks.push(hr());
+  blocks.push(h3('📰 ニュース要約'));
+  blocks.push(p(stripRuby(article.summaryJp || '')));
+  blocks.push(p(article.summaryZh || ''));
+
+  if ((article.vocabulary || []).length) {
+    blocks.push(hr());
+    blocks.push(h3('📖 重要単語（N1・ビジネス）'));
+    for (const v of article.vocabulary) {
+      blocks.push(p('▶ ' + stripRuby(v.word || '') + '　' + (v.meaning || '')));
+      blocks.push(p('　例：' + (v.example || '')));
+    }
+  }
+
+  if ((article.grammarPoints || []).length) {
+    blocks.push(hr());
+    blocks.push(h3('📌 文法・表現'));
+    for (const g of article.grammarPoints) {
+      blocks.push(p('▶ ' + (g.pattern || '') + '　→　' + (g.meaning || '')));
+      blocks.push(p('　' + (g.example || '')));
+      blocks.push(p('　' + (g.exampleZh || '')));
+    }
+  }
+
+  if ((article.keySentences || []).length) {
+    blocks.push(hr());
+    blocks.push(h3('🔑 キーセンテンス'));
+    for (const s of article.keySentences) {
+      blocks.push(p('▶ ' + (s.jp || '')));
+      blocks.push(p('　' + (s.zh || '')));
+      blocks.push(p('　📌 ' + (s.note || '')));
+    }
+  }
+
+  return {
+    parent: { database_id: cleanDbId },
+    properties: {
+      title: { title: rt(title) }
+    },
+    children: blocks.slice(0, 100)
+  };
+}
+
+function stripRuby(str) {
+  return str.replace(/<ruby>/g, '').replace(/<\/ruby>/g, '')
+            .replace(/<rt>.*?<\/rt>/g, '').replace(/<[^>]+>/g, '');
+}
+
+// ── 設定 ─────────────────────────────────────────────────────
 function saveSettings() {
-  const u = document.getElementById('ghUser').value.trim();
-  const r = document.getElementById('ghRepo').value.trim();
-  const tok = document.getElementById('ghToken').value.trim();
-  if (!u || !r || !tok) { alert('すべての項目を入力してください。'); return; }
-  localStorage.setItem('ghUser', u);
-  localStorage.setItem('ghRepo', r);
-  localStorage.setItem('ghToken', tok);
+  const geminiKey   = document.getElementById('geminiKey').value.trim();
+  const notionToken = document.getElementById('notionToken').value.trim();
+  const notionDbId  = document.getElementById('notionDbId').value.trim();
+
+  if (!geminiKey) { alert('Gemini API Key を入力してください。'); return; }
+
+  localStorage.setItem('geminiKey',    geminiKey);
+  if (notionToken) localStorage.setItem('notionToken', notionToken);
+  if (notionDbId)  localStorage.setItem('notionDbId',  notionDbId);
+
   document.getElementById('settingsBtn').classList.add('on');
   closeModal('settingsModal');
-  showStatus('✅ 設定を保存しました');
+  showStatus('✅ 設定を保存しました', 'success');
   setTimeout(hideStatus, 2500);
 }
 
-async function triggerGenerate() {
-  const user = localStorage.getItem('ghUser');
-  const repo = localStorage.getItem('ghRepo');
-  const token = localStorage.getItem('ghToken');
-  if (!user || !repo || !token) { openModal('settingsModal'); showStatus('⚙ 先に GitHub 設定を行ってください'); return; }
-
-  const btn = document.getElementById('genBtn');
-  btn.disabled = true;
-  btn.textContent = 'リクエスト送信中...';
-  showStatus('🔄 GitHub Actions にリクエストを送信しています...');
-
-  try {
-    const res = await fetch('https://api.github.com/repos/' + user + '/' + repo + '/dispatches', {
-      method: 'POST',
-      headers: {
-        'Accept': 'application/vnd.github+json',
-        'Authorization': 'Bearer ' + token,
-        'Content-Type': 'application/json',
-        'X-GitHub-Api-Version': '2022-11-28'
-      },
-      body: JSON.stringify({ event_type: 'generate-news' })
-    });
-    if (res.status === 204) {
-      btn.textContent = '⏳ 生成中（約2分）...';
-      showStatus('✅ リクエスト完了！Gemini がニュースを生成中です...');
-      startPolling();
-    } else {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(err.message || 'GitHub API error (' + res.status + ')');
-    }
-  } catch(e) {
-    showStatus('❌ エラー：' + e.message);
-    btn.disabled = false;
-    btn.textContent = '✦ 今日のニュースを生成する';
-  }
+function loadSettingsToForm() {
+  const k = localStorage.getItem('geminiKey');
+  const t = localStorage.getItem('notionToken');
+  const d = localStorage.getItem('notionDbId');
+  if (k) document.getElementById('geminiKey').value = k;
+  if (t) document.getElementById('notionToken').value = t;
+  if (d) document.getElementById('notionDbId').value = d;
 }
 
-function startPolling() {
-  let attempts = 0;
-  const maxAttempts = 40;
-  const prevDate = generatedData?.date;
-  clearInterval(pollTimer);
-  pollTimer = setInterval(async () => {
-    attempts++;
-    try {
-      const res = await fetch('./today.json?t=' + Date.now());
-      if (res.ok) {
-        const data = await res.json();
-        if (data.date !== prevDate || !prevDate) {
-          clearInterval(pollTimer);
-          generatedData = data;
-          renderCards(data);
-          document.getElementById('genBtn').disabled = false;
-          document.getElementById('genBtn').textContent = '✦ 再度生成する（最新に更新）';
-          showStatus('✅ 今日のニュースが更新されました！');
-          setTimeout(hideStatus, 3000);
-          return;
-        }
-      }
-    } catch(e) {}
-    if (attempts >= maxAttempts) {
-      clearInterval(pollTimer);
-      document.getElementById('genBtn').disabled = false;
-      document.getElementById('genBtn').textContent = '✦ 今日のニュースを生成する';
-      showStatus('⏳ まだ生成中です。しばらく後にページを再読み込みしてください。');
-    }
-  }, 3000);
-}
-
-function showStatus(msg) {
-  const bar = document.getElementById('statusBar');
-  bar.textContent = msg;
-  bar.classList.add('visible');
-}
-function hideStatus() { document.getElementById('statusBar').classList.remove('visible'); }
-
-function renderCards(data) {
-  const output = document.getElementById('output');
-  const articles = (data.articles || []).filter(a => currentTab === 'all' || a.category === currentTab);
-  if (!articles.length) {
-    output.innerHTML = '<div class="empty-state"><div class="empty-icon">🔍</div><div>このカテゴリーには記事がありません</div></div>';
-    return;
-  }
-  let html = '<div class="date-row">' + data.date + '</div>';
-  for (const a of articles) {
-    const [bc, bl] = BADGE[a.category] || ['badge-tech', a.category];
-    const vocabHtml = (a.vocabulary||[]).map(v =>
-      '<div class="vocab-item">' +
-        '<div class="vocab-word">' + v.word + '</div>' +
-        '<div class="vocab-meaning">' + v.meaning + '</div>' +
-        '<div class="vocab-ex">例：' + v.example + '</div>' +
-      '</div>'
-    ).join('');
-    const gramHtml = (a.grammarPoints||[]).map(g =>
-      '<div class="grammar-item">' +
-        '<div class="grammar-pat">' + g.pattern + '</div>' +
-        '<div class="grammar-meaning">' + g.meaning + '</div>' +
-        '<div class="grammar-ex">→ ' + g.example + '</div>' +
-        '<div class="grammar-ex-zh">' + g.exampleZh + '</div>' +
-      '</div>'
-    ).join('');
-    const sentHtml = (a.keySentences||[]).map(s =>
-      '<div class="sent-item">' +
-        '<div class="sent-jp">' + s.jp + '</div>' +
-        '<div class="sent-zh">' + s.zh + '</div>' +
-        '<div class="sent-note">📌 ' + s.note + '</div>' +
-      '</div>'
-    ).join('');
-    html +=
-      '<div class="news-card">' +
-        '<div class="card-header">' +
-          '<div class="badge-row"><span class="badge ' + bc + '">' + bl + '</span></div>' +
-          '<div class="card-title">' + a.titleJp + '</div>' +
-          '<div class="card-meta">' + a.titleZh + '・出典：' + a.source + '</div>' +
-        '</div>' +
-        '<div class="card-body">' +
-          '<div class="section-lbl">ニュース要約</div>' +
-          '<div class="summary">' + a.summaryJp + '</div>' +
-          '<div class="summary-zh">' + a.summaryZh + '</div>' +
-          '<div class="section-lbl">重要単語</div>' +
-          '<div class="vocab-grid">' + vocabHtml + '</div>' +
-          '<div class="section-lbl">文法・表現</div>' +
-          gramHtml +
-          '<div class="section-lbl">キーセンテンス</div>' +
-          sentHtml +
-        '</div>' +
-      '</div>';
-  }
-  output.innerHTML = html;
+// ── Modal ────────────────────────────────────────────────────
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+function closeIfOutside(e, id) {
+  if (e.target === document.getElementById(id)) closeModal(id);
 }
 </script>
 </body>
