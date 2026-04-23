@@ -1,11 +1,7 @@
 name: Generate Daily News
 
 on:
-  schedule:
-    - cron: '50 23 * * *'
-  repository_dispatch:
-    types: [generate-news]
-  workflow_dispatch:
+   workflow_dispatch:
 
 jobs:
   generate:
